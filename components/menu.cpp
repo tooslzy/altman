@@ -236,22 +236,22 @@ bool RenderMainMenu()
 				{
 					do
 					{
-						// if (_wcsicmp(pe.szExeFile, L"RobloxPlayerBeta.exe") == 0)
-						// {
-						// 	HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
-						// 	if (hProc)
-						// 	{
-						// 		TerminateProcess(hProc, 0);
-						// 		CloseHandle(hProc);
-						// 		LOG_INFO(string("Terminated Roblox process: ") + to_string(pe.th32ProcessID));
-						// 	}
-						// 	else
-						// 	{
-						// 		LOG_ERROR(
-						// 			string("Failed to open Roblox process for termination: ") + to_string(pe.
-						// 				th32ProcessID) + " (Error: " + to_string(GetLastError()) + ")");
-						// 	}
-						// }
+						if (_stricmp(pe.szExeFile, "RobloxPlayerBeta.exe") == 0)
+						{
+							HANDLE hProc = OpenProcess(PROCESS_TERMINATE, FALSE, pe.th32ProcessID);
+							if (hProc)
+							{
+								TerminateProcess(hProc, 0);
+								CloseHandle(hProc);
+								LOG_INFO(string("Terminated Roblox process: ") + to_string(pe.th32ProcessID));
+							}
+							else
+							{
+								LOG_ERROR(
+									string("Failed to open Roblox process for termination: ") + to_string(pe.
+										th32ProcessID) + " (Error: " + to_string(GetLastError()) + ")");
+							}
+						}
 					}
 					while (Process32Next(hSnap, &pe));
 				}
