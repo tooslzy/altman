@@ -1,8 +1,8 @@
 <div align="center">
     <img src="assets/256x256.png" 
             alt="Picture" 
-            width="250" 
-            height="250" 
+            width="256" 
+            height="256" 
             style="display: block; margin: 0 auto" />
 
 <h1>Altman</h1>
