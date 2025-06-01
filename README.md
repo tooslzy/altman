@@ -23,8 +23,8 @@ A comprehensive tool for managing multiple Roblox accounts with ease.
 - **By JobID**: Enter the JobID in the quick join field
 - **By PlaceID**: Use the PlaceID to join any available server
 
-[!TIP]
-You may also join games through the Servers or Games tabs.
+> [!TIP]
+> You may also join games through the Servers or Games tabs.
 
 ### Viewing Friends
 Select any saved account and navigate to the friends tab. The results will be a automatically populated.
@@ -37,9 +37,11 @@ Select any saved account and navigate to the friends tab. The results will be a 
 
 ## Security
 
-- Account cookies are stored locally and encrypted
 - Never share your account cookies with others
 - Use at your own risk
+
+> [!NOTE]
+> Account cookies are stored locally and encrypted
 
 ## License
 
@@ -50,5 +52,5 @@ MIT License - see LICENSE file for details
 Pull requests are welcome. For major changes, please open an issue first.
 
 ## Disclaimer
-[!NOTE]
-This tool is not affiliated with Roblox Corporation. Use responsibly and in accordance with Roblox Terms of Service.
+> [!IMPORTANT]
+> This tool is not affiliated with Roblox Corporation. Use responsibly and in accordance with Roblox Terms of Service.
