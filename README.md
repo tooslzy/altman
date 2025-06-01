@@ -1,6 +1,13 @@
-# Altman - Roblox Account Manager
+<div align="center">
+    <img src="assets/256x256.png" 
+            alt="Picture" 
+            width="250" 
+            height="250" 
+            style="display: block; margin: 0 auto" />
 
-A comprehensive tool for managing multiple Roblox accounts with ease.
+<h1>Altman</h1>
+<p>A comprehensive tool for managing multiple Roblox accounts with ease.</p>
+</div>
 
 ## Features
 
@@ -11,6 +18,7 @@ A comprehensive tool for managing multiple Roblox accounts with ease.
 - **Game Search** - Search and discover Roblox games
 - **Log Parser** - Converts Roblox log files into human-readable format
 
+---
 ## Usage
 
 ### Adding Accounts
@@ -29,11 +37,15 @@ A comprehensive tool for managing multiple Roblox accounts with ease.
 ### Viewing Friends
 Select any saved account and navigate to the friends tab. The results will be a automatically populated.
 
+---
+
 ## Requirements
 
 - Windows 10/11 (Tested for Windows 11 24H2)
 - .NET Framework 4.7.2+
 - Active internet connection
+
+---
 
 ## Security
 
@@ -42,6 +54,8 @@ Select any saved account and navigate to the friends tab. The results will be a 
 
 > [!NOTE]
 > Account cookies are stored locally and encrypted
+
+---
 
 ## License
 
