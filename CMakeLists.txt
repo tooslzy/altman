@@ -37,6 +37,7 @@ target_compile_features(imgui PUBLIC cxx_std_20)
 set(APP_SRC
         main.cpp
         ui.cpp
+        resource.rc
         components/data.cpp
         components/menu.cpp
         components/accounts/accounts_context_menu.cpp
