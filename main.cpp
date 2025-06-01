@@ -2,6 +2,7 @@
 #define ICON_MAX_16_FA 0xf3ff
 #define ICON_MIN_BRANDS_FA 0xf300
 #define ICON_MAX_BRANDS_FA 0xf3ff
+#define IDI_ICON_32 102
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -18,9 +19,6 @@
 #include "utils/notifications.h"
 #include "utils/logging.hpp"
 #include <cstdio>
-#define IDI_MAINICON 101
-#define IDI_ICON_16 101
-#define IDI_ICON_32 102
 
 #include <windows.h>
 

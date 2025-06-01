@@ -1,4 +1,5 @@
-#define _CRT_SECURE_NO_WARNINGS
+#define CRT_SECURE_NO_WARNINGS
+#define IDI_ICON_32 102
 
 #include "accounts_context_menu.h"
 #include <shlobj_core.h>
@@ -8,6 +9,13 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <wrl.h>
+#include <wil/com.h>
+#include <WebView2.h>
+#include <thread>
+#include <atomic>
+#include <dwmapi.h>
+#include <memory>
 
 #include "../../utils/roblox_api.h"
 #include "../../utils/threading.h"
@@ -16,153 +24,288 @@
 #include "../../ui.h"
 #include "../data.h"
 
+#pragma comment(lib, "Dwmapi.lib")
+
+using Microsoft::WRL::Callback;
+using Microsoft::WRL::ComPtr;
+
 static char g_edit_note_buffer_ctx[1024];
 static int g_editing_note_for_account_id_ctx = -1;
 
 using namespace ImGui;
 using namespace std;
 
-#include <windows.h>
-#include <filesystem>
-#include <fstream>
-#include <shlobj.h>
+class AccountWebViewWindow
+{
+private:
+    HWND m_hwnd = nullptr;
+    ComPtr<ICoreWebView2Controller> m_controller;
+    ComPtr<ICoreWebView2> m_webview;
+    AccountData m_account;
+    static std::atomic<int> s_windowCount;
+    static const wchar_t* s_windowClassName;
+    bool m_initialized = false;
+
+public:
+    AccountWebViewWindow(const AccountData& account) : m_account(account) {}
+
+    ~AccountWebViewWindow()
+    {
+        if (m_hwnd)
+        {
+            DestroyWindow(m_hwnd);
+        }
+    }
+
+    bool Create(HINSTANCE hInstance)
+    {
+        // Register window class if needed
+        static bool classRegistered = false;
+        if (!classRegistered)
+        {
+            WNDCLASSEXW wc{ sizeof(wc) };
+            wc.style = CS_HREDRAW | CS_VREDRAW;
+            wc.hInstance = hInstance;
+            wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+            wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_32));
+            wc.lpszClassName = s_windowClassName;
+            wc.lpfnWndProc = WndProc;
+            wc.cbWndExtra = sizeof(void*);
+
+            if (!RegisterClassExW(&wc))
+            {
+                LOG_ERROR("Failed to register window class");
+                return false;
+            }
+            classRegistered = true;
+        }
+
+        std::wstring title = std::wstring(m_account.displayName.begin(), m_account.displayName.end());
+
+        m_hwnd = CreateWindowExW(
+            0, s_windowClassName, title.c_str(),
+            WS_OVERLAPPEDWINDOW,
+            CW_USEDEFAULT, CW_USEDEFAULT, 1280, 800,
+            nullptr, nullptr, hInstance, this);
+
+
+        if (!m_hwnd)
+        {
+            LOG_ERROR("Failed to create window");
+            return false;
+        }
+
+        s_windowCount++;
+        ShowWindow(m_hwnd, SW_SHOW);
+        UpdateWindow(m_hwnd);
+
+        CreateWebView();
+        return true;
+    }
+
+	void ProcessMessages()
+    {
+    	MSG msg;
+    	while (GetMessage(&msg, nullptr, 0, 0))
+    	{
+    		TranslateMessage(&msg);
+    		DispatchMessage(&msg);
+    	}
+    }
+
+private:
+    void CreateWebView()
+    {
+        // Get AppData folder for WebView2 user data
+        char appDataPath[MAX_PATH];
+        if (FAILED(SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataPath)))
+        {
+            LOG_ERROR("Failed to get AppData path");
+            Status::Set("Failed to get AppData path");
+            return;
+        }
+
+        // Create unique user data folder for this account
+        std::filesystem::path userDataPath = std::filesystem::path(appDataPath) / "Altman" / "WebView2Profiles" / m_account.username;
+        try
+        {
+            std::filesystem::create_directories(userDataPath);
+        }
+        catch (const exception& e)
+        {
+            LOG_ERROR("Failed to create user data directory: " + string(e.what()));
+            return;
+        }
+
+        std::wstring userDataPathW = userDataPath.wstring();
+
+        CreateCoreWebView2EnvironmentWithOptions(
+            nullptr, userDataPathW.c_str(), nullptr,
+            Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
+                [this](HRESULT envHr, ICoreWebView2Environment* env) -> HRESULT
+                {
+                    if (FAILED(envHr))
+                    {
+                        LOG_ERROR("CreateCoreWebView2Environment failed");
+                        return envHr;
+                    }
+
+                    env->CreateCoreWebView2Controller(
+                        m_hwnd,
+                        Callback<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>(
+                            [this](HRESULT ctrlHr, ICoreWebView2Controller* controller) -> HRESULT
+                            {
+                                if (FAILED(ctrlHr))
+                                {
+                                    LOG_ERROR("CreateCoreWebView2Controller failed");
+                                    return ctrlHr;
+                                }
+
+                                m_controller = controller;
+                                m_controller->get_CoreWebView2(&m_webview);
+
+                                // Fill the client area
+                                RECT rc{};
+                                GetClientRect(m_hwnd, &rc);
+                                m_controller->put_Bounds(rc);
+
+                                // Inject cookie and navigate
+                                InjectRobloxCookie();
+
+                                // Navigate to user profile
+                                std::wstring url = L"https://www.roblox.com/home";
+                                m_webview->Navigate(url.c_str());
+
+                                m_initialized = true;
+                                LOG_INFO("Successfully created WebView2 for account: " + m_account.displayName);
+                                return S_OK;
+                            }).Get());
+                    return S_OK;
+                }).Get());
+    }
+
+    void InjectRobloxCookie()
+    {
+        ComPtr<ICoreWebView2_2> webview2_2;
+        if (FAILED(m_webview.As(&webview2_2)) || !webview2_2)
+        {
+            LOG_ERROR("WebView2 runtime too old – missing cookie API");
+            return;
+        }
+
+        ComPtr<ICoreWebView2CookieManager> mgr;
+        if (FAILED(webview2_2->get_CookieManager(&mgr)) || !mgr)
+        {
+            LOG_ERROR("Cannot obtain CookieManager");
+            return;
+        }
+
+        // Convert cookie to wide string
+        std::wstring cookieValueW(m_account.cookie.begin(), m_account.cookie.end());
+
+        // Create the cookie
+        ComPtr<ICoreWebView2Cookie> cookie;
+        if (FAILED(mgr->CreateCookie(
+                L".ROBLOSECURITY", cookieValueW.c_str(),
+                L".roblox.com", L"/",
+                &cookie)) || !cookie)
+        {
+            LOG_ERROR("CreateCookie failed");
+            return;
+        }
+
+        cookie->put_IsSecure(TRUE);
+        cookie->put_IsHttpOnly(TRUE);
+        cookie->put_SameSite(COREWEBVIEW2_COOKIE_SAME_SITE_KIND_LAX);
+
+        // Set expiration to 10 years from now
+        using namespace std::chrono;
+        double expires = duration_cast<seconds>(
+            system_clock::now().time_since_epoch() + hours(24 * 365 * 10)
+        ).count();
+        cookie->put_Expires(expires);
+
+        if (FAILED(mgr->AddOrUpdateCookie(cookie.Get())))
+        {
+            LOG_ERROR("AddOrUpdateCookie failed");
+            return;
+        }
+
+        LOG_INFO("Successfully injected cookie for account: " + m_account.displayName);
+    }
+
+    void ResizeWebView()
+    {
+        if (m_controller)
+        {
+            RECT rc{};
+            GetClientRect(m_hwnd, &rc);
+            m_controller->put_Bounds(rc);
+        }
+    }
+
+    static LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        AccountWebViewWindow* pThis = nullptr;
+
+        if (msg == WM_NCCREATE)
+        {
+            CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
+            pThis = reinterpret_cast<AccountWebViewWindow*>(pCreate->lpCreateParams);
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
+        }
+        else
+        {
+            pThis = reinterpret_cast<AccountWebViewWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+        }
+
+        if (pThis)
+        {
+            switch (msg)
+            {
+            case WM_SIZE:
+                pThis->ResizeWebView();
+                return 0;
+            case WM_DESTROY:
+                s_windowCount--;
+                PostQuitMessage(0);
+                return 0;
+            }
+        }
+
+        return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+};
+
+std::atomic<int> AccountWebViewWindow::s_windowCount{0};
+const wchar_t* AccountWebViewWindow::s_windowClassName = L"AltmanWebView2Window";
 
 void LaunchBrowserWithCookie(const AccountData& account)
 {
-	// Get AppData folder path
-	char appDataPath[MAX_PATH];
-	if (FAILED(SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, appDataPath)))
-	{
-		LOG_ERROR("Failed to get AppData path");
-		Status::Set("Failed to get AppData path");
-		return;
-	}
+    if (account.cookie.empty())
+    {
+        LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
+        Status::Set("Cookie is empty for this account");
+        return;
+    }
 
-	// Create profile directory for this account
-	filesystem::path profilesDir = filesystem::path(appDataPath) / "RobloxAccountManager" / "BrowserProfiles";
-	filesystem::path profilePath = profilesDir / ("Account_" + to_string(account.id));
+    std::thread([account]()
+    {
+        LOG_INFO("Launching WebView2 browser for account: " + account.displayName);
 
-	try
-	{
-		filesystem::create_directories(profilePath);
-	}
-	catch (const exception& e)
-	{
-		LOG_ERROR("Failed to create profile directory: " + string(e.what()));
-		Status::Set("Failed to create profile directory");
-		return;
-	}
+        auto window = std::make_unique<AccountWebViewWindow>(account);
 
-	// Create a simple Chrome extension to inject the cookie
-	filesystem::path extensionPath = profilePath / "cookie_injector";
-	filesystem::create_directories(extensionPath);
-
-	// Write manifest.json
-	ofstream manifest(extensionPath / "manifest.json");
-	manifest << R"({
-  "manifest_version": 3,
-  "name": "Roblox Cookie Injector",
-  "version": "1.0",
-  "permissions": ["cookies", "webNavigation"],
-  "host_permissions": ["*://*.roblox.com/*"],
-  "background": {
-    "service_worker": "background.js"
-  }
-})";
-	manifest.close();
-
-	// Write background.js with the cookie
-	ofstream background(extensionPath / "background.js");
-	background << "chrome.webNavigation.onBeforeNavigate.addListener(\n"
-		<< "  function(details) {\n"
-		<< "    if (details.url.includes('roblox.com')) {\n"
-		<< "      chrome.cookies.set({\n"
-		<< "        url: 'https://www.roblox.com',\n"
-		<< "        name: '.ROBLOSECURITY',\n"
-		<< "        value: '" << account.cookie << "',\n"
-		<< "        domain: '.roblox.com',\n"
-		<< "        path: '/',\n"
-		<< "        secure: true,\n"
-		<< "        httpOnly: true,\n"
-		<< "        sameSite: 'lax'\n"
-		<< "      });\n"
-		<< "    }\n"
-		<< "  },\n"
-		<< "  {url: [{hostContains: 'roblox.com'}]}\n"
-		<< ");\n";
-	background.close();
-
-	// Find Chrome executable
-	string chromePath;
-	char programFiles[MAX_PATH];
-
-	// Try multiple possible Chrome locations
-	vector<string> chromePaths = {
-		string(getenv("LOCALAPPDATA")) + "\\Google\\Chrome\\Application\\chrome.exe",
-		string(getenv("PROGRAMFILES")) + "\\Google\\Chrome\\Application\\chrome.exe",
-		string(getenv("PROGRAMFILES(X86)")) + "\\Google\\Chrome\\Application\\chrome.exe"
-	};
-
-	for (const auto& path : chromePaths)
-	{
-		if (filesystem::exists(path))
-		{
-			chromePath = path;
-			break;
-		}
-	}
-
-	if (chromePath.empty())
-	{
-		LOG_ERROR("Chrome not found");
-		Status::Set("Chrome not found");
-		return;
-	}
-
-	// Build command line with absolute paths
-	string cmdLine = "\"" + chromePath + "\""
-		" --user-data-dir=\"" + profilePath.string() + "\""
-		" --profile-directory=\"Default\""
-		" --load-extension=\"" + extensionPath.string() + "\""
-		" --no-first-run"
-		" --no-default-browser-check"
-		" --disable-popup-blocking"
-		" --disable-prompt-on-repost"
-		" --force-new-profile"
-		" \"https://www.roblox.com/users/\"" + account.userId + "/profile";
-
-	LOG_INFO("Launching browser with command: " + cmdLine);
-	LOG_INFO("Profile path: " + profilePath.string());
-
-	// Use CreateProcess instead of system()
-	STARTUPINFOA si = {0};
-	PROCESS_INFORMATION pi = {nullptr};
-	si.cb = sizeof(si);
-
-	if (!CreateProcessA(
-		nullptr,
-		const_cast<char*>(cmdLine.c_str()),
-		nullptr,
-		nullptr,
-		FALSE,
-		CREATE_NEW_CONSOLE,
-		nullptr,
-		nullptr,
-		&si,
-		&pi))
-	{
-		DWORD error = GetLastError();
-		LOG_ERROR("Failed to launch browser. Error code: " + to_string(error));
-		Status::Set("Failed to launch browser");
-	}
-	else
-	{
-		LOG_INFO("Successfully launched browser for account: " + account.displayName);
-		Status::Set("Launched browser for " + account.displayName);
-
-		CloseHandle(pi.hProcess);
-		CloseHandle(pi.hThread);
-	}
+        if (window->Create(GetModuleHandle(nullptr)))
+        {
+            Status::Set("Launched browser for " + account.displayName);
+            window->ProcessMessages();
+        }
+        else
+        {
+            LOG_ERROR("Failed to create WebView2 window for account: " + account.displayName);
+            Status::Set("Failed to launch browser");
+        }
+    }).detach();
 }
 
 void RenderAccountContextMenu(AccountData& account, const string& unique_context_menu_id)

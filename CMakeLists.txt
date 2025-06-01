@@ -66,11 +66,12 @@ target_include_directories(altman PRIVATE
         utils
 )
 
-# Link libraries
+find_package(unofficial-webview2 CONFIG REQUIRED)
 target_link_libraries(altman PRIVATE
         imgui
         cpr::cpr
         nlohmann_json::nlohmann_json
+        unofficial::webview2::webview2
         d3d11
         dxgi
         d3dcompiler
