@@ -11,12 +11,10 @@
 using namespace std;
 using namespace std::chrono;
 
-static string urlEncode(const string& s)
-{
+static string urlEncode(const string &s) {
 	ostringstream out;
 	out << hex << uppercase;
-	for (unsigned char c : s)
-	{
+	for (unsigned char c: s) {
 		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
 			out << c;
 		else
@@ -25,8 +23,7 @@ static string urlEncode(const string& s)
 	return out.str();
 }
 
-inline HANDLE startRoblox(uint64_t placeId, const string& jobId, const string& cookie)
-{
+inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &cookie) {
 	// Status::Set("Fetching x-csrf token"); // REMOVE THIS
 	LOG_INFO("Fetching x-csrf token");
 	auto csrfResponse = HttpClient::post(
@@ -34,8 +31,7 @@ inline HANDLE startRoblox(uint64_t placeId, const string& jobId, const string& c
 		{{"Cookie", ".ROBLOSECURITY=" + cookie}});
 
 	auto csrfToken = csrfResponse.headers.find("x-csrf-token");
-	if (csrfToken == csrfResponse.headers.end())
-	{
+	if (csrfToken == csrfResponse.headers.end()) {
 		cerr << "failed to get CSRF token\n";
 
 		// Status::Set("Failed to get CSRF token"); // REMOVE THIS
@@ -55,8 +51,7 @@ inline HANDLE startRoblox(uint64_t placeId, const string& jobId, const string& c
 		});
 
 	auto ticket = ticketResponse.headers.find("rbx-authentication-ticket");
-	if (ticket == ticketResponse.headers.end())
-	{
+	if (ticket == ticketResponse.headers.end()) {
 		cerr << "failed to get authentication ticket\n";
 		// Status::Set("Failed to get authentication ticket"); // REMOVE THIS
 		LOG_ERROR("Failed to get authentication ticket"); // This will now set the status
@@ -64,41 +59,40 @@ inline HANDLE startRoblox(uint64_t placeId, const string& jobId, const string& c
 	}
 
 	auto nowMs = duration_cast<milliseconds>(
-			system_clock::now().time_since_epoch())
-		.count();
+				system_clock::now().time_since_epoch())
+			.count();
 	ostringstream ts;
 	ts << nowMs;
 
 	string placeLauncherUrl =
-		"https://assetgame.roblox.com/game/PlaceLauncher.ashx?"
-		"request=RequestGameJob"
-		"&browserTrackerId=147062882894"
-		"&placeId=" +
-		to_string(placeId) +
-		"&gameId=" + jobId +
-		"&isPlayTogetherGame=false"
-		"+browsertrackerid:147062882894"
-		"+robloxLocale:en_us"
-		"+gameLocale:en_us"
-		"+channel:";
+			"https://assetgame.roblox.com/game/PlaceLauncher.ashx?"
+			"request=RequestGameJob"
+			"&browserTrackerId=147062882894"
+			"&placeId=" +
+			to_string(placeId) +
+			"&gameId=" + jobId +
+			"&isPlayTogetherGame=false"
+			"+browsertrackerid:147062882894"
+			"+robloxLocale:en_us"
+			"+gameLocale:en_us"
+			"+channel:";
 
 	string protocolLaunchCommand =
-		"roblox-player:1+launchmode:play"
-		"+gameinfo:" +
-		ticket->second +
-		"+launchtime:" + ts.str() +
-		"+placelauncherurl:" + urlEncode(placeLauncherUrl);
+			"roblox-player:1+launchmode:play"
+			"+gameinfo:" +
+			ticket->second +
+			"+launchtime:" + ts.str() +
+			"+placelauncherurl:" + urlEncode(placeLauncherUrl);
 
 
 	string logMessage = "Attempting to launch Roblox for place ID: " + to_string(placeId) + (
-		jobId.empty() ? "" : " with Job ID: " + jobId);
+		                    jobId.empty() ? "" : " with Job ID: " + jobId);
 	LOG_INFO(logMessage);
 
 	wstring notificationTitle = L"Launching";
 	wostringstream notificationMessageStream;
 	notificationMessageStream << L"Attempting to launch Roblox for place ID: " << placeId;
-	if (!jobId.empty())
-	{
+	if (!jobId.empty()) {
 		notificationMessageStream << L" with Job ID: " << jobId.c_str();
 	}
 	Notifications::showNotification(notificationTitle.c_str(), notificationMessageStream.str().c_str());
@@ -109,8 +103,7 @@ inline HANDLE startRoblox(uint64_t placeId, const string& jobId, const string& c
 	executionInfo.lpFile = protocolLaunchCommand.c_str();
 	executionInfo.nShow = SW_SHOWNORMAL;
 
-	if (!ShellExecuteExA(&executionInfo))
-	{
+	if (!ShellExecuteExA(&executionInfo)) {
 		LOG_ERROR("ShellExecuteExA failed for Roblox launch. Error: " + to_string(GetLastError()));
 		cerr << "ShellExecuteEx failed: " << GetLastError() << "\n";
 		return nullptr;

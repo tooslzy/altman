@@ -19,15 +19,18 @@
 - **Log Parser** - Converts Roblox log files into human-readable format
 
 ---
+
 ## Usage
 
 ### Adding Accounts
+
 1. Launch Altman
 2. Go to "Accounts" in the title bar
 3. Go to "Add Account" > "Add Via Cookie"
 4. Enter your cookie and press "Add Cookie"
 
 ### Joining Games
+
 - **By JobID**: Enter the JobID in the quick join field
 - **By PlaceID**: Use the PlaceID to join any available server
 
@@ -35,6 +38,7 @@
 > You may also join games through the Servers or Games tabs.
 
 ### Viewing Friends
+
 Select any saved account and navigate to the friends tab. The results will be a automatically populated.
 
 ---
@@ -66,5 +70,6 @@ MIT License - see LICENSE file for details
 Pull requests are welcome. For major changes, please open an issue first.
 
 ## Disclaimer
+
 > [!IMPORTANT]
 > This tool is not affiliated with Roblox Corporation. Use responsibly and in accordance with Roblox Terms of Service.
