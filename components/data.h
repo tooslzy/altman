@@ -7,32 +7,32 @@
 #include <array>
 #include <imgui.h>
 
-struct AccountData
-{
-	int id = 0;
-	std::string displayName;
-	std::string username;
-	std::string userId;
-	std::string status;
-	std::string note;
-	std::string cookie;
-	bool isFavorite = false;
+struct AccountData {
+    int id = 0;
+    std::string displayName;
+    std::string username;
+    std::string userId;
+    std::string status;
+    std::string note;
+    std::string cookie;
+    bool isFavorite = false;
 };
 
-struct FavoriteGame
-{
-	std::string name;
-	uint64_t universeId;
-	uint64_t placeId;
+struct FavoriteGame {
+    std::string name;
+    uint64_t universeId;
+    uint64_t placeId;
 };
 
-struct FriendInfo
-{
-	uint64_t id = 0;
-	std::string username;
-	std::string displayName;
-	std::string presence;
-	bool isDeleted = false;
+struct FriendInfo {
+    uint64_t id = 0;
+    std::string username;
+    std::string displayName;
+
+    std::string presence;
+    std::string lastLocation;
+    uint64_t placeId = 0;
+    std::string gameId;
 };
 
 extern std::vector<FavoriteGame> g_favorites;
@@ -45,19 +45,22 @@ extern int g_defaultAccountId;
 extern std::array<char, 128> s_jobIdBuffer;
 extern std::array<char, 128> s_playerBuffer;
 
-namespace Data
-{
-	void LoadSettings(const std::string& filename = "settings.json");
-	void SaveSettings(const std::string& filename = "settings.json");
+namespace Data {
+    void LoadSettings(const std::string &filename = "settings.json");
 
-	void SaveAccounts(const std::string& filename = "accounts.json");
-	void LoadAccounts(const std::string& filename = "accounts.json");
+    void SaveSettings(const std::string &filename = "settings.json");
 
-	void LoadFavorites(const std::string& filename = "favorites.json");
-	void SaveFavorites(const std::string& filename = "favorites.json");
+    void SaveAccounts(const std::string &filename = "accounts.json");
 
-	void LoadFriends(const std::string& filename = "friends.json");
-	void SaveFriends(const std::string& filename = "friends.json");
+    void LoadAccounts(const std::string &filename = "accounts.json");
+
+    void LoadFavorites(const std::string &filename = "favorites.json");
+
+    void SaveFavorites(const std::string &filename = "favorites.json");
+
+    void LoadFriends(const std::string &filename = "friends.json");
+
+    void SaveFriends(const std::string &filename = "friends.json");
 }
 
 #endif

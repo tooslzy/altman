@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 
-if(NOT DEFINED VCPKG_TARGET_TRIPLET)
+if (NOT DEFINED VCPKG_TARGET_TRIPLET)
     set(VCPKG_TARGET_TRIPLET "x64-windows-static")
-endif()
+endif ()
 
 project(altman LANGUAGES CXX)
 
@@ -54,6 +54,7 @@ set(APP_SRC
         components/servers/servers_tab.cpp
         components/servers/servers_utils.cpp
         components/settings/settings_tab.cpp
+        utils/webview.hpp
 )
 
 # Create executable
@@ -77,7 +78,7 @@ target_link_libraries(altman PRIVATE
         d3dcompiler
 )
 
-if(MSVC)
+if (MSVC)
     set_property(TARGET altman PROPERTY
             MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -87,7 +88,7 @@ if(MSVC)
     target_link_options(altman PRIVATE
             /SUBSYSTEM:WINDOWS
     )
-endif()
+endif ()
 
 # Copy assets
 add_custom_command(TARGET altman POST_BUILD

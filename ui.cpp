@@ -3,16 +3,21 @@
 #include <imgui.h>
 #include <string>
 
+#include "accounts/accounts.h"
+#include "components/components.h"
+#include "friends/friends.h"
+#include "games/games.h"
+#include "history/history.h"
+#include "settings/settings.h"
 #include "utils/roblox_api.h"
 #include "utils/status.h"
-#include "components/components.h"
 
 using namespace ImGui;
 
-struct TabInfo
-{
+struct TabInfo {
     const char *title;
     Tab tab_id;
+
     void (*render_function)();
 };
 
@@ -23,7 +28,8 @@ static const TabInfo tabs[] = {
     {"\xEF\x84\x9B  Games", Tab_Games, RenderGamesTab},
     {"\xEF\x85\x9C  History", Tab_History, RenderHistoryTab},
     {"\xEF\x8A\xA8  Console", Tab_Console, Console::RenderConsoleTab},
-    {"\xEF\x80\x93  Settings", Tab_Settings, RenderSettingsTab}};
+    {"\xEF\x80\x93  Settings", Tab_Settings, RenderSettingsTab}
+};
 
 char join_value_buf[JOIN_VALUE_BUF_SIZE] = "";
 char join_jobid_buf[JOIN_JOBID_BUF_SIZE] = "";
@@ -34,25 +40,24 @@ int g_activeTab = Tab_Accounts;
 uint64_t g_targetPlaceId_ServersTab = 0;
 uint64_t g_targetUniverseId_ServersTab = 0;
 
-bool RenderUI()
-{
+bool RenderUI() {
     bool exit_from_menu = RenderMainMenu();
     bool exit_from_content = false;
 
     const ImGuiViewport *vp = GetMainViewport();
     SetNextWindowPos(vp->WorkPos);
     SetNextWindowSize(vp->WorkSize);
-    ImGuiWindowFlags mainFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize;
+    ImGuiWindowFlags mainFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                 ImGuiWindowFlags_NoResize;
     Begin("MainAppArea", nullptr, mainFlags);
 
     ImGuiStyle &style = GetStyle();
     style.FrameRounding = 2.5f;
     style.ChildRounding = 2.5f;
     PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x + 2.0f, style.FramePadding.y + 2.0f));
-    if (BeginTabBar("MainTabBar", ImGuiTabBarFlags_Reorderable))
-    {
-        for (int i = 0; i < IM_ARRAYSIZE(tabs); ++i)
-        {
+    if (BeginTabBar("MainTabBar", ImGuiTabBarFlags_Reorderable)) {
+        for (int i = 0; i < IM_ARRAYSIZE(tabs); ++i) {
             const auto &tab_info = tabs[i];
             ImGuiTabItemFlags flags = (g_activeTab == tab_info.tab_id)
                                           ? ImGuiTabItemFlags_SetSelected
@@ -62,22 +67,20 @@ bool RenderUI()
             if (IsItemClicked(ImGuiMouseButton_Left))
                 g_activeTab = tab_info.tab_id;
 
-            if (opened)
-            {
+            if (opened) {
                 tab_info.render_function();
                 EndTabItem();
             }
         }
         EndTabBar();
     }
-    PopStyleVar();
-
-    {
+    PopStyleVar(); {
         ImVec2 pos = ImVec2(vp->WorkPos.x + vp->WorkSize.x,
                             vp->WorkPos.y + vp->WorkSize.y);
         SetNextWindowPos(pos, ImGuiCond_Always, ImVec2(1, 1));
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing;
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoFocusOnAppearing;
         PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
         PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
@@ -86,9 +89,6 @@ bool RenderUI()
         End();
         PopStyleVar(2);
     }
-
-    if (IsKeyPressed(ImGuiKey_Escape, false))
-        exit_from_content = true;
 
     End();
 
