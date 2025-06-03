@@ -372,7 +372,12 @@ namespace RobloxApi {
         }
     }
 
-    static string getVoiceChatStatus(const string &cookie) {
+    struct VoiceSettings {
+        std::string status;
+        time_t bannedUntil = 0;
+    };
+
+    static VoiceSettings getVoiceChatStatus(const string &cookie) {
         LOG_INFO("Fetching voice chat settings");
         auto resp = HttpClient::get(
             "https://voice.roblox.com/v1/settings",
@@ -383,8 +388,8 @@ namespace RobloxApi {
             LOG_INFO("Failed to fetch voice settings: HTTP " +
                      to_string(resp.status_code));
             if (resp.status_code == 403)
-                return "Banned";
-            return "Unknown";
+                return {"Banned", 0};
+            return {"Unknown", 0};
         }
 
         auto j = HttpClient::decode(resp);
@@ -392,14 +397,19 @@ namespace RobloxApi {
         bool enabled = j.value("isVoiceEnabled", false);
         bool eligible = j.value("isUserEligible", false);
         bool opted = j.value("isUserOptIn", false);
+        time_t bannedUntil = 0;
+        if (j.contains("bannedUntil") && !j["bannedUntil"].is_null()) {
+            if (j["bannedUntil"].contains("Seconds"))
+                bannedUntil = j["bannedUntil"]["Seconds"].get<int64_t>();
+        }
 
         if (banned)
-            return "Banned";
+            return {"Banned", bannedUntil};
         if (enabled || opted)
-            return "Enabled";
+            return {"Enabled", 0};
         if (eligible)
-            return "Disabled";
-        return "Not Eligible";
+            return {"Disabled", 0};
+        return {"Not Eligible", 0};
     }
 
     struct FriendDetail {

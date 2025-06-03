@@ -10,6 +10,7 @@
 
 #include "../../utils/roblox_api.h"
 #include "../components.h"
+#include "../../utils/time_utils.h"
 #include "../../ui.h"
 #include "../data.h"
 
@@ -119,7 +120,17 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             ImVec4 statusColor = getStatusColor(account.status);
             render_centered_text_in_cell(account.status.c_str(), &statusColor);
 
-            render_centered_text_in_cell(account.voiceStatus.c_str());
+            TableNextColumn();
+            float voice_y = GetCursorPosY();
+            SetCursorPosY(voice_y + vertical_padding);
+            TextUnformatted(account.voiceStatus.c_str());
+            if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0 && IsItemHovered()) {
+                BeginTooltip();
+                string timeStr = formatRelativeFuture(account.voiceBanExpiry);
+                TextUnformatted(timeStr.c_str());
+                EndTooltip();
+            }
+            SetCursorPosY(voice_y + row_interaction_height);
 
             render_centered_text_in_cell(account.note.c_str());
 
