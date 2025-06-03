@@ -27,6 +27,9 @@ static ImVec4 getStatusColor(string statusCode) {
     if (statusCode == "Invisible") {
         return ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
     }
+    if (statusCode == "Banned") {
+        return ImVec4(1.0f, 0.3f, 0.3f, 1.0f);
+    }
     return ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 }
 
