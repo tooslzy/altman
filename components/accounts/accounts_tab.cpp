@@ -31,7 +31,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
         TableSetupColumn("Username", ImGuiTableColumnFlags_WidthStretch);
         TableSetupColumn("UserID", ImGuiTableColumnFlags_WidthFixed, 100.0f);
         TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 100.0f);
-        TableSetupColumn("Voice", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        TableSetupColumn("Voice", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultHide, 100.0f);
         TableSetupColumn("Note", ImGuiTableColumnFlags_WidthStretch);
         TableSetupScrollFreeze(0, 1);
 
