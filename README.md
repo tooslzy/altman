@@ -39,7 +39,7 @@
 
 ### Viewing Friends
 
-Select any saved account and navigate to the friends tab. The results will be a automatically populated.
+Select any saved account and navigate to the friends tab. The results will be automatically populated.
 
 ---
 
