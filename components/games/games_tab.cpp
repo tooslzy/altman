@@ -241,7 +241,15 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 TableSetColumnIndex(1);
                 Indent(desiredTextIndent);
                 Spacing();
+                PushID(label);
                 TextWrapped("%s", valueString.c_str());
+                if (BeginPopupContextItem("CopyGameValue")) {
+                    if (MenuItem("Copy")) {
+                        SetClipboardText(valueString.c_str());
+                    }
+                    EndPopup();
+                }
+                PopID();
                 Spacing();
                 Unindent(desiredTextIndent);
             };
@@ -288,10 +296,19 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 descChildHeight = minDescHeight;
             }
 
+            const string descStr = detailInfo.description;
+            PushID("GameDesc");
             BeginChild("##DescScroll", ImVec2(0, descChildHeight - 4), false,
                        ImGuiWindowFlags_HorizontalScrollbar);
-            TextWrapped("%s", detailInfo.description.c_str());
+            TextWrapped("%s", descStr.c_str());
+            if (BeginPopupContextItem("CopyGameDesc")) {
+                if (MenuItem("Copy")) {
+                    SetClipboardText(descStr.c_str());
+                }
+                EndPopup();
+            }
             EndChild();
+            PopID();
 
             Spacing();
             Unindent(desiredTextIndent);

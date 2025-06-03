@@ -186,11 +186,19 @@ void RenderFriendsTab() {
                     TableSetColumnIndex(1);
                     Indent(desiredTextIndent);
                     Spacing();
+                    PushID(label);
                     if (isWrapped) {
                         TextWrapped("%s", value.c_str());
                     } else {
                         TextUnformatted(value.c_str());
                     }
+                    if (BeginPopupContextItem("CopyFriendValue")) {
+                        if (MenuItem("Copy")) {
+                            SetClipboardText(value.c_str());
+                        }
+                        EndPopup();
+                    }
+                    PopID();
                     Spacing();
                     Unindent(desiredTextIndent);
                 };
@@ -238,10 +246,19 @@ void RenderFriendsTab() {
                     descChildHeight = minDescHeight;
                 }
 
+                const string descStr = D.description.empty() ? "(No description)" : D.description;
+                PushID("FriendDesc");
                 BeginChild("##FriendDescScroll", ImVec2(0, descChildHeight - 4), false,
                            ImGuiWindowFlags_HorizontalScrollbar);
-                TextWrapped("%s", D.description.empty() ? "(No description)" : D.description.c_str());
+                TextWrapped("%s", descStr.c_str());
+                if (BeginPopupContextItem("CopyFriendDesc")) {
+                    if (MenuItem("Copy")) {
+                        SetClipboardText(descStr.c_str());
+                    }
+                    EndPopup();
+                }
                 EndChild();
+                PopID();
 
                 Spacing();
                 Unindent(desiredTextIndent);

@@ -121,20 +121,56 @@ static void startLogWatcher() {
 
 static void DisplayOptionalText(const char *label, const string &value) {
     if (!value.empty()) {
+        PushID(label);
         Text("%s: %s", label, value.c_str());
+        if (BeginPopupContextItem("CopyHistoryValue")) {
+            if (MenuItem("Copy")) {
+                SetClipboardText(value.c_str());
+            }
+            EndPopup();
+        }
+        PopID();
     }
 }
 
 static void DisplayLogDetails(const LogInfo &logInfo) {
+    PushID("file");
     Text("File: %s", logInfo.fileName.c_str());
-    Text("Time: %s", friendlyTimestamp(logInfo.timestamp).c_str());
+    if (BeginPopupContextItem("CopyHistoryValue")) {
+        if (MenuItem("Copy")) {
+            SetClipboardText(logInfo.fileName.c_str());
+        }
+        EndPopup();
+    }
+    PopID();
+
+    string timeStr = friendlyTimestamp(logInfo.timestamp);
+    PushID("time");
+    Text("Time: %s", timeStr.c_str());
+    if (BeginPopupContextItem("CopyHistoryValue")) {
+        if (MenuItem("Copy")) {
+            SetClipboardText(timeStr.c_str());
+        }
+        EndPopup();
+    }
+    PopID();
     DisplayOptionalText("Version", logInfo.version);
     DisplayOptionalText("Channel", logInfo.channel);
     DisplayOptionalText("Place ID", logInfo.placeId);
     DisplayOptionalText("Job ID", logInfo.jobId);
     DisplayOptionalText("Universe ID", logInfo.universeId);
-    if (!logInfo.serverIp.empty())
-        Text("Server: %s:%s", logInfo.serverIp.c_str(), logInfo.serverPort.c_str());
+    if (!logInfo.serverIp.empty()) {
+        string serverStr = logInfo.serverIp + ":" + logInfo.serverPort;
+        PushID("server");
+        Text("Server: %s", serverStr.c_str());
+        if (BeginPopupContextItem("CopyHistoryValue")) {
+            if (MenuItem("Copy")) {
+                SetClipboardText(serverStr.c_str());
+            }
+            EndPopup();
+        }
+        PopID();
+    }
     DisplayOptionalText("User ID", logInfo.userId);
 }
 
