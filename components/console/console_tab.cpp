@@ -152,4 +152,9 @@ namespace Console {
         EndChild();
         PopStyleVar(1);
     }
+
+    std::vector<std::string> GetLogs() {
+        std::lock_guard<std::mutex> lock(g_logMutex);
+        return g_logMessages;
+    }
 }
