@@ -25,6 +25,8 @@ static unordered_map<uint64_t, RobloxApi::GameDetail> gameDetailCache;
 static unordered_set<uint64_t> favoriteGameIds;
 static vector<GameInfo> favoriteGamesList;
 static bool hasLoadedFavorites = false;
+static char renameBuffer[128] = "";
+static uint64_t renamingUniverseId = 0;
 
 static void RenderGameSearch();
 
@@ -73,6 +75,37 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                              });
                     Data::SaveFavorites();
                     CloseCurrentPopup();
+                }
+
+                if (BeginMenu("Rename")) {
+                    if (renamingUniverseId != game.universeId) {
+                        strncpy(renameBuffer, game.name.c_str(), sizeof(renameBuffer) - 1);
+                        renameBuffer[sizeof(renameBuffer) - 1] = '\0';
+                        renamingUniverseId = game.universeId;
+                    }
+
+                    InputText("##RenameFavorite", renameBuffer, sizeof(renameBuffer));
+
+                    if (Button("Save##RenameFavorite")) {
+                        if (renamingUniverseId == game.universeId) {
+                            favoriteGamesList[index].name = renameBuffer;
+                            for (auto &f: g_favorites) {
+                                if (f.universeId == game.universeId) {
+                                    f.name = renameBuffer;
+                                    break;
+                                }
+                            }
+                            Data::SaveFavorites();
+                        }
+                        renamingUniverseId = 0;
+                        CloseCurrentPopup();
+                    }
+                    SameLine();
+                    if (Button("Cancel##RenameFavorite")) {
+                        renamingUniverseId = 0;
+                        CloseCurrentPopup();
+                    }
+                    ImGui::EndMenu();
                 }
                 EndPopup();
             }
