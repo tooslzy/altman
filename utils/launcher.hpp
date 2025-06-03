@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <sstream>
+#include <iomanip>
 
 #include "logging.hpp"
 #include "notifications.h"
@@ -12,15 +13,15 @@ using namespace std;
 using namespace std::chrono;
 
 static string urlEncode(const string &s) {
-	ostringstream out;
-	out << hex << uppercase;
-	for (unsigned char c: s) {
-		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-			out << c;
-		else
-			out << '%' << setw(2) << static_cast<int>(c);
-	}
-	return out.str();
+        ostringstream out;
+        out << hex << uppercase;
+        for (unsigned char c: s) {
+                if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+                        out << c;
+                else
+                        out << '%' << setw(2) << setfill('0') << static_cast<int>(c);
+        }
+        return out.str();
 }
 
 inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &cookie) {
