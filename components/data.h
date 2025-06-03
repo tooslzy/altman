@@ -5,6 +5,7 @@
 #include <string>
 #include <set>
 #include <array>
+#include <ctime>
 #include <imgui.h>
 
 struct AccountData {
@@ -13,6 +14,8 @@ struct AccountData {
     std::string username;
     std::string userId;
     std::string status;
+    std::string voiceStatus;
+    time_t voiceBanExpiry = 0;
     std::string note;
     std::string cookie;
     bool isFavorite = false;

@@ -375,6 +375,46 @@ namespace RobloxApi {
         }
     }
 
+    struct VoiceSettings {
+        std::string status;
+        time_t bannedUntil = 0;
+    };
+
+    static VoiceSettings getVoiceChatStatus(const string &cookie) {
+        LOG_INFO("Fetching voice chat settings");
+        auto resp = HttpClient::get(
+            "https://voice.roblox.com/v1/settings",
+            {{"Cookie", ".ROBLOSECURITY=" + cookie}}
+        );
+
+        if (resp.status_code != 200) {
+            LOG_INFO("Failed to fetch voice settings: HTTP " +
+                     to_string(resp.status_code));
+            if (resp.status_code == 403)
+                return {"Banned", 0};
+            return {"Unknown", 0};
+        }
+
+        auto j = HttpClient::decode(resp);
+        bool banned = j.value("isBanned", false);
+        bool enabled = j.value("isVoiceEnabled", false);
+        bool eligible = j.value("isUserEligible", false);
+        bool opted = j.value("isUserOptIn", false);
+        time_t bannedUntil = 0;
+        if (j.contains("bannedUntil") && !j["bannedUntil"].is_null()) {
+            if (j["bannedUntil"].contains("Seconds"))
+                bannedUntil = j["bannedUntil"]["Seconds"].get<int64_t>();
+        }
+
+        if (banned)
+            return {"Banned", bannedUntil};
+        if (enabled || opted)
+            return {"Enabled", 0};
+        if (eligible)
+            return {"Disabled", 0};
+        return {"Not Eligible", 0};
+    }
+
     struct FriendDetail {
         uint64_t id = 0;
         string username;
