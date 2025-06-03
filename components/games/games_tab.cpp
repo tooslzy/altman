@@ -89,7 +89,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     if (Button("Save##RenameFavorite")) {
                         if (renamingUniverseId == game.universeId) {
                             favoriteGamesList[index].name = renameBuffer;
-                            for (auto &f : g_favorites) {
+                            for (auto &f: g_favorites) {
                                 if (f.universeId == game.universeId) {
                                     f.name = renameBuffer;
                                     break;
@@ -105,7 +105,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                         renamingUniverseId = 0;
                         CloseCurrentPopup();
                     }
-                    EndMenu();
+                    ImGui::EndMenu();
                 }
                 EndPopup();
             }
