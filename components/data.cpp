@@ -98,6 +98,7 @@ namespace Data {
             account.username = item.value("username", "");
             account.userId = item.value("userId", "");
             account.status = item.value("status", "");
+            account.voiceStatus = item.value("voiceStatus", "");
             account.note = item.value("note", "");
             account.isFavorite = item.value("isFavorite", false);
 
@@ -161,6 +162,7 @@ namespace Data {
                 {"username", account.username},
                 {"userId", account.userId},
                 {"status", account.status},
+                {"voiceStatus", account.voiceStatus},
                 {"note", account.note},
                 {"encryptedCookie", b64EncryptedCookie},
                 {"isFavorite", account.isFavorite}

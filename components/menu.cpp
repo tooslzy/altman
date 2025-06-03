@@ -107,6 +107,7 @@ bool RenderMainMenu() {
                     LOG_INFO("Refreshing account statuses...");
                     for (auto &acct: g_accounts) {
                         acct.status = RobloxApi::getPresence(acct.cookie, stoull(acct.userId));
+                        acct.voiceStatus = RobloxApi::getVoiceChatStatus(acct.cookie);
                     }
                     Data::SaveAccounts();
                     LOG_INFO("Refreshed account statuses");
@@ -140,6 +141,7 @@ bool RenderMainMenu() {
                             string username = RobloxApi::getUsername(cookie);
                             string displayName = RobloxApi::getDisplayName(cookie);
                             string presence = RobloxApi::getPresence(cookie, uid);
+                            string voice = RobloxApi::getVoiceChatStatus(cookie);
 
                             AccountData newAcct;
                             newAcct.id = nextId;
@@ -148,6 +150,7 @@ bool RenderMainMenu() {
                             newAcct.username = move(username);
                             newAcct.displayName = move(displayName);
                             newAcct.status = move(presence);
+                            newAcct.voiceStatus = move(voice);
                             newAcct.note = "";
                             newAcct.isFavorite = false;
 

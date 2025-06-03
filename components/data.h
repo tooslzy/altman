@@ -13,6 +13,7 @@ struct AccountData {
     std::string username;
     std::string userId;
     std::string status;
+    std::string voiceStatus;
     std::string note;
     std::string cookie;
     bool isFavorite = false;

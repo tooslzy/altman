@@ -16,7 +16,7 @@
 using namespace ImGui;
 
 void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *table_id, float table_height) {
-    constexpr int column_count = 5;
+    constexpr int column_count = 6;
     ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
                                   ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable |
                                   ImGuiTableFlags_ContextMenuInBody;
@@ -30,6 +30,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
         TableSetupColumn("Username", ImGuiTableColumnFlags_WidthStretch);
         TableSetupColumn("UserID", ImGuiTableColumnFlags_WidthFixed, 100.0f);
         TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+        TableSetupColumn("Voice", ImGuiTableColumnFlags_WidthFixed, 100.0f);
         TableSetupColumn("Note", ImGuiTableColumnFlags_WidthStretch);
         TableSetupScrollFreeze(0, 1);
 
@@ -42,6 +43,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
         TextUnformatted("UserID");
         TableNextColumn();
         TextUnformatted("Status");
+        TableNextColumn();
+        TextUnformatted("Voice");
         TableNextColumn();
         TextUnformatted("Note");
 
@@ -115,6 +118,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 
             ImVec4 statusColor = getStatusColor(account.status);
             render_centered_text_in_cell(account.status.c_str(), &statusColor);
+
+            render_centered_text_in_cell(account.voiceStatus.c_str());
 
             render_centered_text_in_cell(account.note.c_str());
 
