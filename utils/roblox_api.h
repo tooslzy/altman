@@ -547,14 +547,18 @@ namespace RobloxApi {
     }
 
     inline bool sendFriendRequest(const string &targetUserId,
-                                  const string &cookie) {
+                                  const string &cookie,
+                                  string *outResponse = nullptr) {
         string url = "https://friends.roblox.com/v1/users/" + targetUserId +
                      "/request-friendship";
 
         auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
         auto it = csrfResp.headers.find("x-csrf-token");
-        if (it == csrfResp.headers.end())
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            cerr << "friend request: missing CSRF token\n";
             return false;
+        }
 
         nlohmann::json body = {
             {"friendshipOriginSourceType", 0},
@@ -571,10 +575,18 @@ namespace RobloxApi {
             },
             body.dump());
 
-        if (resp.status_code != 200)
+        if (outResponse) *outResponse = resp.text;
+
+        if (resp.status_code != 200) {
+            cerr << "friend request failed HTTP " << resp.status_code << ": " << resp.text << "\n";
             return false;
+        }
 
         auto j = HttpClient::decode(resp);
-        return j.value("success", false);
+        bool success = j.value("success", false);
+        if (!success) {
+            cerr << "friend request API failure: " << resp.text << "\n";
+        }
+        return success;
     }
 }

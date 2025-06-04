@@ -113,12 +113,16 @@ void RenderFriendsTab() {
                     } else {
                         uid = RobloxApi::getUserIdFromUsername(input);
                     }
-                    bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie);
-                    if (ok)
+                    string resp;
+                    bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie, &resp);
+                    if (ok) {
                         Status::Set("Friend request sent");
-                    else
+                    } else {
+                        cerr << "Friend request failed: " << resp << "\n";
                         Status::Set("Friend request failed");
+                    }
                 } catch (const exception &e) {
+                    cerr << "Friend request exception: " << e.what() << "\n";
                     Status::Set("Friend request failed");
                 }
                 s_addFriendLoading = false;
