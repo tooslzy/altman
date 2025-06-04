@@ -523,4 +523,71 @@ namespace RobloxApi {
         }
         return out;
     }
+
+    inline uint64_t getUserIdFromUsername(const string &username) {
+        nlohmann::json payload = {
+            {"usernames", {username}},
+            {"excludeBannedUsers", true}
+        };
+
+        auto resp = HttpClient::post(
+            "https://users.roblox.com/v1/usernames/users",
+            {},
+            payload.dump());
+
+        if (resp.status_code != 200)
+            throw runtime_error("Username lookup failed: HTTP "
+                                + to_string(resp.status_code));
+
+        auto j = HttpClient::decode(resp);
+        if (!j.contains("data") || j["data"].empty())
+            throw runtime_error("Username not found");
+
+        return j["data"][0].value("id", 0ULL);
+    }
+
+    inline bool sendFriendRequest(const string &targetUserId,
+                                  const string &cookie,
+                                  string *outResponse = nullptr) {
+        string url = "https://friends.roblox.com/v1/users/" + targetUserId +
+                     "/request-friendship";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            cerr << "friend request: missing CSRF token\n";
+            return false;
+        }
+
+        nlohmann::json body = {
+            {"friendshipOriginSourceType", 0}
+        };
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            },
+            body.dump());
+
+        if (outResponse) *outResponse = resp.text;
+
+        if (resp.status_code != 200) {
+            cerr << "friend request failed HTTP " << resp.status_code << ": " << resp.text << "\n";
+            return false;
+        }
+
+        auto j = HttpClient::decode(resp);
+        bool success = j.value("success", false);
+        if (success) {
+            cerr << "friend request success: " << resp.text << "\n";
+        } else {
+            cerr << "friend request API failure: " << resp.text << "\n";
+        }
+        return success;
+    }
 }

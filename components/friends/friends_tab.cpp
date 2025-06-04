@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <cctype>
 
 
 #include "../data.h"
@@ -31,6 +32,18 @@ static auto ICON_REFRESH = "\xEF\x8B\xB1 ";
 static auto ICON_OPEN_LINK = "\xEF\x8A\xBB ";
 static auto ICON_INVENTORY = "\xEF\x8A\x90 ";
 static auto ICON_JOIN = "\xEF\x8B\xB6 ";
+static auto ICON_USER_PLUS = "\xEF\x88\xB4 ";
+
+static bool s_openAddFriendPopup = false;
+static char s_addFriendBuffer[64] = "";
+static atomic<bool> s_addFriendLoading{false};
+
+static inline string trim_copy(string s) {
+    size_t start = s.find_first_not_of(" \t\n\r");
+    size_t end = s.find_last_not_of(" \t\n\r");
+    if (start == string::npos) return "";
+    return s.substr(start, end - start + 1);
+}
 
 static const char *presenceIcon(const string &p) {
     if (p == "InStudio")
@@ -80,7 +93,60 @@ void RenderFriendsTab() {
         Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.userId, acct.cookie, ref(g_friends),
                              ref(g_friendsLoading));
     }
+    SameLine();
+    if (Button((string(ICON_USER_PLUS) + "Add Friend").c_str())) {
+        s_openAddFriendPopup = true;
+    }
     EndDisabled();
+
+    if (s_openAddFriendPopup) {
+        OpenPopup("Add Friend");
+        s_openAddFriendPopup = false;
+    }
+    if (BeginPopupModal("Add Friend", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        InputTextWithHint("##AddFriendUser", "Username or ID", s_addFriendBuffer, sizeof(s_addFriendBuffer));
+        if (s_addFriendLoading.load()) {
+            SameLine();
+            TextUnformatted("Sending...");
+        }
+        Spacing();
+        if (Button("Send") && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
+            string input = trim_copy(s_addFriendBuffer);
+            s_addFriendLoading = true;
+            Threading::newThread([input, cookie = acct.cookie]() {
+                try {
+                    uint64_t uid = 0;
+                    if (input.empty()) throw runtime_error("Username not provided");
+                    if (all_of(input.begin(), input.end(), [](unsigned char c) { return std::isdigit(c); })) {
+                        uid = stoull(input);
+                    } else {
+                        uid = RobloxApi::getUserIdFromUsername(input);
+                    }
+                    string resp;
+                    bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie, &resp);
+                    if (ok) {
+                        LOG_INFO("Friend request sent");
+                        cerr << "Friend request response: " << resp << "\n";
+                    } else {
+                        cerr << "Friend request failed: " << resp << "\n";
+                        LOG_INFO("Friend request failed");
+                    }
+                } catch (const exception &e) {
+                    cerr << "Friend request exception: " << e.what() << "\n";
+                    LOG_INFO(e.what());
+                }
+                s_addFriendLoading = false;
+            });
+            s_addFriendBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        SameLine();
+        if (Button("Cancel") && !s_addFriendLoading.load()) {
+            s_addFriendBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        EndPopup();
+    }
 
     float friendsListWidth = 300.0f;
 
