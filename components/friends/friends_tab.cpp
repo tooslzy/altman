@@ -38,6 +38,13 @@ static bool s_openAddFriendPopup = false;
 static char s_addFriendBuffer[64] = "";
 static atomic<bool> s_addFriendLoading{false};
 
+static inline string trim_copy(string s) {
+    size_t start = s.find_first_not_of(" \t\n\r");
+    size_t end = s.find_last_not_of(" \t\n\r");
+    if (start == string::npos) return "";
+    return s.substr(start, end - start + 1);
+}
+
 static const char *presenceIcon(const string &p) {
     if (p == "InStudio")
         return ICON_TOOL;
@@ -103,12 +110,13 @@ void RenderFriendsTab() {
             TextUnformatted("Sending...");
         }
         if (Button("Send") && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
-            string input = s_addFriendBuffer;
+            string input = trim_copy(s_addFriendBuffer);
             s_addFriendLoading = true;
             Threading::newThread([input, cookie = acct.cookie]() {
                 try {
                     uint64_t uid = 0;
-                    if (all_of(input.begin(), input.end(), ::isdigit)) {
+                    if (input.empty()) throw runtime_error("Username not provided");
+                    if (all_of(input.begin(), input.end(), [](unsigned char c){ return std::isdigit(c); })) {
                         uid = stoull(input);
                     } else {
                         uid = RobloxApi::getUserIdFromUsername(input);
@@ -117,13 +125,14 @@ void RenderFriendsTab() {
                     bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie, &resp);
                     if (ok) {
                         Status::Set("Friend request sent");
+                        cerr << "Friend request response: " << resp << "\n";
                     } else {
                         cerr << "Friend request failed: " << resp << "\n";
                         Status::Set("Friend request failed");
                     }
                 } catch (const exception &e) {
                     cerr << "Friend request exception: " << e.what() << "\n";
-                    Status::Set("Friend request failed");
+                    Status::Set(e.what());
                 }
                 s_addFriendLoading = false;
             });

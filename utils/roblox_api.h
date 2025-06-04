@@ -561,8 +561,7 @@ namespace RobloxApi {
         }
 
         nlohmann::json body = {
-            {"friendshipOriginSourceType", 0},
-            {"senderNickname", ""}
+            {"friendshipOriginSourceType", 0}
         };
 
         auto resp = HttpClient::post(
@@ -584,7 +583,9 @@ namespace RobloxApi {
 
         auto j = HttpClient::decode(resp);
         bool success = j.value("success", false);
-        if (!success) {
+        if (success) {
+            cerr << "friend request success: " << resp.text << "\n";
+        } else {
             cerr << "friend request API failure: " << resp.text << "\n";
         }
         return success;

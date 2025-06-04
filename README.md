@@ -41,7 +41,7 @@
 ### Viewing Friends
 
 Select any saved account and navigate to the friends tab. The results will be automatically populated.
-Use the **Add Friend** button to send a request by username or user ID.
+Use the **Add Friend** button (next to Refresh) to send a request by username or user ID.
 
 ---
 
