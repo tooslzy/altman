@@ -11,7 +11,6 @@
 #include <tchar.h>
 #include "ui.h"
 #include <dwmapi.h>
-#include <shellscalingapi.h>
 
 #include <objbase.h>
 
@@ -51,7 +50,7 @@ void CleanupRenderTarget();
 
 // DPI handling functions
 float GetDPIScale(HWND hwnd) {
-    UINT dpi = GetDpiForWindow(hwnd);
+    const UINT dpi = GetDpiForWindow(hwnd);
     return dpi / 96.0f;
 }
 
@@ -337,7 +336,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 ReloadFonts(g_currentDPIScale);
             }
 
-            RECT *prcNewWindow = (RECT *) lParam;
+            RECT *prcNewWindow = reinterpret_cast<RECT *>(lParam);
             SetWindowPos(hWnd, nullptr,
                          prcNewWindow->left, prcNewWindow->top,
                          prcNewWindow->right - prcNewWindow->left,
