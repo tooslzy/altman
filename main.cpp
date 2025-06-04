@@ -19,6 +19,8 @@
 #include "utils/notifications.h"
 #include "utils/logging.hpp"
 #include <cstdio>
+#include <thread>
+#include <chrono>
 
 #include <windows.h>
 
@@ -135,6 +137,28 @@ int WINAPI WinMain(
 
     Data::SaveAccounts();
     LOG_INFO("Loaded accounts and refreshed statuses");
+
+    Threading::newThread([] {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::minutes(g_statusRefreshInterval));
+            LOG_INFO("Refreshing account statuses...");
+            for (auto &acct: g_accounts) {
+                if (!acct.userId.empty()) {
+                    try {
+                        uint64_t uid = std::stoull(acct.userId);
+                        acct.status = RobloxApi::getPresence(acct.cookie, uid);
+                        auto vs = RobloxApi::getVoiceChatStatus(acct.cookie);
+                        acct.voiceStatus = vs.status;
+                        acct.voiceBanExpiry = vs.bannedUntil;
+                    } catch (const std::exception &e) {
+                        LOG_ERROR(std::string("Error refreshing account ") + acct.userId + ": " + e.what());
+                    }
+                }
+            }
+            Data::SaveAccounts();
+            LOG_INFO("Refreshed account statuses");
+        }
+    });
 
     WNDCLASSEXW wc = {
         sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L,

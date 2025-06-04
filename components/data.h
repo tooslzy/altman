@@ -45,6 +45,7 @@ extern std::set<int> g_selectedAccountIds;
 extern ImVec4 g_accentColor;
 
 extern int g_defaultAccountId;
+extern int g_statusRefreshInterval;
 extern std::array<char, 128> s_jobIdBuffer;
 extern std::array<char, 128> s_playerBuffer;
 
