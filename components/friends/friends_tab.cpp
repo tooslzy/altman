@@ -100,15 +100,16 @@ void RenderFriendsTab() {
     EndDisabled();
 
     if (s_openAddFriendPopup) {
-        OpenPopup("AddFriendPopup");
+        OpenPopup("Add Friend");
         s_openAddFriendPopup = false;
     }
-    if (BeginPopupModal("AddFriendPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (BeginPopupModal("Add Friend", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         InputTextWithHint("##AddFriendUser", "Username or ID", s_addFriendBuffer, sizeof(s_addFriendBuffer));
         if (s_addFriendLoading.load()) {
             SameLine();
             TextUnformatted("Sending...");
         }
+        Spacing();
         if (Button("Send") && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
             string input = trim_copy(s_addFriendBuffer);
             s_addFriendLoading = true;
@@ -116,7 +117,7 @@ void RenderFriendsTab() {
                 try {
                     uint64_t uid = 0;
                     if (input.empty()) throw runtime_error("Username not provided");
-                    if (all_of(input.begin(), input.end(), [](unsigned char c){ return std::isdigit(c); })) {
+                    if (all_of(input.begin(), input.end(), [](unsigned char c) { return std::isdigit(c); })) {
                         uid = stoull(input);
                     } else {
                         uid = RobloxApi::getUserIdFromUsername(input);
@@ -124,15 +125,15 @@ void RenderFriendsTab() {
                     string resp;
                     bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie, &resp);
                     if (ok) {
-                        Status::Set("Friend request sent");
+                        LOG_INFO("Friend request sent");
                         cerr << "Friend request response: " << resp << "\n";
                     } else {
                         cerr << "Friend request failed: " << resp << "\n";
-                        Status::Set("Friend request failed");
+                        LOG_INFO("Friend request failed");
                     }
                 } catch (const exception &e) {
                     cerr << "Friend request exception: " << e.what() << "\n";
-                    Status::Set(e.what());
+                    LOG_INFO(e.what());
                 }
                 s_addFriendLoading = false;
             });
