@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <cctype>
 
 
 #include "../data.h"
@@ -31,6 +32,11 @@ static auto ICON_REFRESH = "\xEF\x8B\xB1 ";
 static auto ICON_OPEN_LINK = "\xEF\x8A\xBB ";
 static auto ICON_INVENTORY = "\xEF\x8A\x90 ";
 static auto ICON_JOIN = "\xEF\x8B\xB6 ";
+static auto ICON_USER_PLUS = "\xEF\x88\xB4 ";
+
+static bool s_openAddFriendPopup = false;
+static char s_addFriendBuffer[64] = "";
+static atomic<bool> s_addFriendLoading{false};
 
 static const char *presenceIcon(const string &p) {
     if (p == "InStudio")
@@ -80,7 +86,53 @@ void RenderFriendsTab() {
         Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.userId, acct.cookie, ref(g_friends),
                              ref(g_friendsLoading));
     }
+    SameLine();
+    if (Button((string(ICON_USER_PLUS) + "Add Friend").c_str())) {
+        s_openAddFriendPopup = true;
+    }
     EndDisabled();
+
+    if (s_openAddFriendPopup) {
+        OpenPopup("AddFriendPopup");
+        s_openAddFriendPopup = false;
+    }
+    if (BeginPopupModal("AddFriendPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        InputTextWithHint("##AddFriendUser", "Username or ID", s_addFriendBuffer, sizeof(s_addFriendBuffer));
+        if (s_addFriendLoading.load()) {
+            SameLine();
+            TextUnformatted("Sending...");
+        }
+        if (Button("Send") && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
+            string input = s_addFriendBuffer;
+            s_addFriendLoading = true;
+            Threading::newThread([input, cookie = acct.cookie]() {
+                try {
+                    uint64_t uid = 0;
+                    if (all_of(input.begin(), input.end(), ::isdigit)) {
+                        uid = stoull(input);
+                    } else {
+                        uid = RobloxApi::getUserIdFromUsername(input);
+                    }
+                    bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie);
+                    if (ok)
+                        Status::Set("Friend request sent");
+                    else
+                        Status::Set("Friend request failed");
+                } catch (const exception &e) {
+                    Status::Set("Friend request failed");
+                }
+                s_addFriendLoading = false;
+            });
+            s_addFriendBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        SameLine();
+        if (Button("Cancel") && !s_addFriendLoading.load()) {
+            s_addFriendBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        EndPopup();
+    }
 
     float friendsListWidth = 300.0f;
 

@@ -14,6 +14,7 @@
 - **Account Management** - Add and securely save account cookies for multiple Roblox accounts
 - **Quick Join** - Join games directly using JobID or PlaceID
 - **Friends List** - View friends list for each saved account
+- **Add Friends** - Send friend requests right from the Friends tab
 - **Server Browser** - Browse active servers for any Roblox game
 - **Game Search** - Search and discover Roblox games
 - **Log Parser** - Converts Roblox log files into human-readable format
@@ -40,6 +41,7 @@
 ### Viewing Friends
 
 Select any saved account and navigate to the friends tab. The results will be automatically populated.
+Use the **Add Friend** button to send a request by username or user ID.
 
 ---
 

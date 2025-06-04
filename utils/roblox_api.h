@@ -523,4 +523,58 @@ namespace RobloxApi {
         }
         return out;
     }
+
+    inline uint64_t getUserIdFromUsername(const string &username) {
+        nlohmann::json payload = {
+            {"usernames", {username}},
+            {"excludeBannedUsers", true}
+        };
+
+        auto resp = HttpClient::post(
+            "https://users.roblox.com/v1/usernames/users",
+            {},
+            payload.dump());
+
+        if (resp.status_code != 200)
+            throw runtime_error("Username lookup failed: HTTP "
+                                + to_string(resp.status_code));
+
+        auto j = HttpClient::decode(resp);
+        if (!j.contains("data") || j["data"].empty())
+            throw runtime_error("Username not found");
+
+        return j["data"][0].value("id", 0ULL);
+    }
+
+    inline bool sendFriendRequest(const string &targetUserId,
+                                  const string &cookie) {
+        string url = "https://friends.roblox.com/v1/users/" + targetUserId +
+                     "/request-friendship";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end())
+            return false;
+
+        nlohmann::json body = {
+            {"friendshipOriginSourceType", 0},
+            {"senderNickname", ""}
+        };
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            },
+            body.dump());
+
+        if (resp.status_code != 200)
+            return false;
+
+        auto j = HttpClient::decode(resp);
+        return j.value("success", false);
+    }
 }
