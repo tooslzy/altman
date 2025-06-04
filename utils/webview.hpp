@@ -1,6 +1,7 @@
 #define IDI_ICON_32 102
 #include <windows.h>
 #include <shlobj_core.h>
+#include <shellscalingapi.h>  // Add this for DPI awareness
 #include <wrl.h>
 #include <WebView2.h>
 
@@ -42,6 +43,12 @@ public:
     bool create() {
         HINSTANCE hInstance = GetModuleHandleW(nullptr);
 
+        // Enable DPI awareness
+        static std::once_flag dpiFlag;
+        std::call_once(dpiFlag, [] {
+            SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        });
+
         static std::once_flag flag;
         std::call_once(flag, [hInstance] {
             WNDCLASSEXW wc{sizeof(wc)};
@@ -58,10 +65,19 @@ public:
             RegisterClassExW(&wc);
         });
 
+        // Get DPI for proper initial sizing
+        HDC hdc = GetDC(nullptr);
+        int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+        ReleaseDC(nullptr, hdc);
+
+        // Scale initial window size based on DPI
+        int scaledWidth = MulDiv(1280, dpi, 96);
+        int scaledHeight = MulDiv(800, dpi, 96);
+
         hwnd_ = CreateWindowExW(
             0, kClassName_, windowTitle_.c_str(),
             WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT, 1280, 800,
+            CW_USEDEFAULT, CW_USEDEFAULT, scaledWidth, scaledHeight,
             nullptr, nullptr, hInstance, this);
 
         if (!hwnd_) return false;
@@ -159,6 +175,14 @@ private:
         RECT rc{};
         GetClientRect(hwnd_, &rc);
         controller_->put_Bounds(rc);
+
+        // Optional: Ensure proper DPI scaling for WebView2
+        ComPtr<ICoreWebView2Controller3> controller3;
+        if (SUCCEEDED(controller_.As(&controller3))) {
+            UINT dpi = GetDpiForWindow(hwnd_);
+            double scale = static_cast<double>(dpi) / 96.0;
+            controller3->put_RasterizationScale(scale);
+        }
     }
 
     static LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
@@ -180,6 +204,18 @@ private:
             case WM_SIZE:
                 self->resize();
                 return 0;
+
+            case WM_DPICHANGED: {
+                // Handle DPI changes when moving between monitors
+                RECT *newRect = reinterpret_cast<RECT *>(l);
+                SetWindowPos(h, nullptr,
+                             newRect->left, newRect->top,
+                             newRect->right - newRect->left,
+                             newRect->bottom - newRect->top,
+                             SWP_NOZORDER | SWP_NOACTIVATE);
+                return 0;
+            }
+
             case WM_DESTROY:
                 --s_windowCount_;
                 PostQuitMessage(0);

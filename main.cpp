@@ -11,6 +11,7 @@
 #include <tchar.h>
 #include "ui.h"
 #include <dwmapi.h>
+#include <shellscalingapi.h>
 
 #include <objbase.h>
 
@@ -26,6 +27,7 @@ HWND Notifications::g_appHWnd = NULL;
 
 #pragma comment(lib, "Dwmapi.lib")
 #pragma comment(lib, "Ole32.lib")
+#pragma comment(lib, "Shcore.lib")
 
 static ID3D11Device *g_pd3dDevice = nullptr;
 static ID3D11DeviceContext *g_pd3dDeviceContext = nullptr;
@@ -34,6 +36,11 @@ static bool g_SwapChainOccluded = false;
 static UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView *g_mainRenderTargetView = nullptr;
 
+// DPI handling globals
+static float g_currentDPIScale = 1.0f;
+static ImFont *g_rubikFont = nullptr;
+static ImFont *g_iconFont = nullptr;
+
 bool CreateDeviceD3D(HWND hWnd);
 
 void CleanupDeviceD3D();
@@ -41,6 +48,51 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 
 void CleanupRenderTarget();
+
+// DPI handling functions
+float GetDPIScale(HWND hwnd) {
+    UINT dpi = GetDpiForWindow(hwnd);
+    return dpi / 96.0f;
+}
+
+void ReloadFonts(float dpiScale) {
+    ImGuiIO &io = ImGui::GetIO();
+    io.Fonts->Clear();
+    float baseFontSize = 16.0f * dpiScale;
+    float iconFontSize = 13.0f * dpiScale;
+    // Load main font
+    g_rubikFont = io.Fonts->AddFontFromFileTTF("assets/Rubik-Regular.ttf", baseFontSize);
+    if (!g_rubikFont) {
+        LOG_ERROR("Failed to load Rubik-Regular.ttf font.");
+        g_rubikFont = io.Fonts->AddFontDefault();
+    }
+    // Load icon font
+    ImFontConfig iconCfg;
+    iconCfg.MergeMode = true;
+    iconCfg.PixelSnapH = true;
+    static constexpr ImWchar fa_solid_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+    g_iconFont = io.Fonts->AddFontFromFileTTF(
+        "assets/fa-solid-900.ttf",
+        iconFontSize,
+        &iconCfg,
+        fa_solid_ranges);
+    if (!g_iconFont && g_rubikFont) {
+        LOG_ERROR("Failed to load fa-solid-900.ttf font for icons.");
+    }
+    io.FontDefault = g_rubikFont;
+    // Scale ImGui style
+    ImGuiStyle &style = ImGui::GetStyle();
+    style = ImGuiStyle(); // Reset to default
+    ImGui::StyleColorsDark();
+    style.ScaleAllSizes(dpiScale);
+    // Rebuild font atlas
+    io.Fonts->Build();
+    // Recreate device objects if they exist
+    if (g_pd3dDevice) {
+        ImGui_ImplDX11_InvalidateDeviceObjects();
+        ImGui_ImplDX11_CreateDeviceObjects();
+    }
+}
 
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -51,6 +103,9 @@ int WINAPI WinMain(
     int nCmdShow) {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
+
+    // Set DPI awareness first
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     HRESULT hrCom = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     if (FAILED(hrCom)) {
@@ -80,7 +135,6 @@ int WINAPI WinMain(
     }
 
     Data::SaveAccounts();
-
     LOG_INFO("Loaded accounts and refreshed statuses");
 
     WNDCLASSEXW wc = {
@@ -99,8 +153,10 @@ int WINAPI WinMain(
 
     Notifications::g_appHWnd = hwnd;
 
-    BOOL useDarkMode = TRUE;
+    // Get initial DPI scale
+    g_currentDPIScale = GetDPIScale(hwnd);
 
+    BOOL useDarkMode = TRUE;
     DwmSetWindowAttribute(
         hwnd, DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE,
         &useDarkMode, sizeof(useDarkMode));
@@ -118,6 +174,7 @@ int WINAPI WinMain(
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
+    // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
@@ -125,29 +182,12 @@ int WINAPI WinMain(
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-    ImFont *rubik = io.Fonts->AddFontFromFileTTF("assets/Rubik-Regular.ttf", 16.0f);
-    if (!rubik) {
-        LOG_ERROR("Failed to load Rubik-Regular.ttf font.");
-    }
-
-    ImFontConfig iconCfg;
-    iconCfg.MergeMode = true;
-    iconCfg.PixelSnapH = true;
-    static constexpr ImWchar fa_solid_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-    ImFont *icons = io.Fonts->AddFontFromFileTTF(
-        "assets/fa-solid-900.ttf",
-        13.0f,
-        &iconCfg,
-        fa_solid_ranges);
-    if (!icons && rubik) {
-        LOG_ERROR("Failed to load fa-solid-900.ttf font for icons.");
-    }
-
-    io.FontDefault = rubik ? rubik : io.Fonts->AddFontDefault();
-
     ImGui::StyleColorsDark();
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+
+    // Load fonts with current DPI scaling
+    ReloadFonts(g_currentDPIScale);
 
     auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -290,6 +330,21 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         return true;
 
     switch (msg) {
+        case WM_DPICHANGED: {
+            float newDPIScale = GetDPIScale(hWnd);
+            if (abs(newDPIScale - g_currentDPIScale) > 0.01f) {
+                g_currentDPIScale = newDPIScale;
+                ReloadFonts(g_currentDPIScale);
+            }
+
+            RECT *prcNewWindow = (RECT *) lParam;
+            SetWindowPos(hWnd, nullptr,
+                         prcNewWindow->left, prcNewWindow->top,
+                         prcNewWindow->right - prcNewWindow->left,
+                         prcNewWindow->bottom - prcNewWindow->top,
+                         SWP_NOZORDER | SWP_NOACTIVATE);
+            return 0;
+        }
         case WM_SIZE:
             if (wParam == SIZE_MINIMIZED)
                 return 0;
