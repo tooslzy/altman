@@ -26,6 +26,7 @@ vector<FriendInfo> g_friends;
 int g_defaultAccountId = -1;
 array<char, 128> s_jobIdBuffer = {};
 array<char, 128> s_playerBuffer = {};
+int g_statusRefreshInterval = 1;
 
 vector<BYTE> encryptData(const string &plainText) {
     DATA_BLOB DataIn;
@@ -229,7 +230,9 @@ namespace Data {
             nlohmann::json j;
             fin >> j;
             g_defaultAccountId = j.value("defaultAccountId", -1);
+            g_statusRefreshInterval = j.value("statusRefreshInterval", 1);
             LOG_INFO("Default account ID = " + std::to_string(g_defaultAccountId));
+            LOG_INFO("Status refresh interval = " + std::to_string(g_statusRefreshInterval));
         } catch (const std::exception &e) {
             LOG_ERROR("Failed to parse " + filename + ": " + e.what());
         }
@@ -238,6 +241,7 @@ namespace Data {
     void SaveSettings(const std::string &filename) {
         nlohmann::json j;
         j["defaultAccountId"] = g_defaultAccountId;
+        j["statusRefreshInterval"] = g_statusRefreshInterval;
         std::ofstream out{filename};
         if (!out.is_open()) {
             LOG_ERROR("Could not open " + filename + " for writing");
@@ -245,5 +249,6 @@ namespace Data {
         }
         out << j.dump(4);
         LOG_INFO("Saved defaultAccountId=" + std::to_string(g_defaultAccountId));
+        LOG_INFO("Saved statusRefreshInterval=" + std::to_string(g_statusRefreshInterval));
     }
 }

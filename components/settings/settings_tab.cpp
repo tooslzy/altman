@@ -11,9 +11,9 @@ using namespace std;
 
 void RenderSettingsTab()
 {
-	if (!g_accounts.empty())
-	{
-		Text("Default Account:");
+        if (!g_accounts.empty())
+        {
+                Text("Default Account:");
 
 		vector<const char*> names;
 		names.reserve(g_accounts.size());
@@ -33,21 +33,32 @@ void RenderSettingsTab()
 		}
 
 		int combo_idx = current_default_idx;
-		if (Combo("##defaultAccountCombo", &combo_idx, names.data(), static_cast<int>(names.size())))
-		{
-			if (combo_idx >= 0 && combo_idx < static_cast<int>(g_accounts.size()))
-			{
-				g_defaultAccountId = g_accounts[combo_idx].id;
+                if (Combo("##defaultAccountCombo", &combo_idx, names.data(), static_cast<int>(names.size())))
+                {
+                        if (combo_idx >= 0 && combo_idx < static_cast<int>(g_accounts.size()))
+                        {
+                                g_defaultAccountId = g_accounts[combo_idx].id;
 
-				g_selectedAccountIds.clear();
-				g_selectedAccountIds.insert(g_defaultAccountId);
+                                g_selectedAccountIds.clear();
+                                g_selectedAccountIds.insert(g_defaultAccountId);
 
-				Data::SaveSettings("settings.json");
-			}
-		}
-	}
-	else
-	{
-		TextDisabled("No accounts available to set a default.");
-	}
+                                Data::SaveSettings("settings.json");
+                        }
+                }
+
+                int interval = g_statusRefreshInterval;
+                if (InputInt("Status Refresh Interval (min)", &interval))
+                {
+                        if (interval < 1) interval = 1;
+                        if (interval != g_statusRefreshInterval)
+                        {
+                                g_statusRefreshInterval = interval;
+                                Data::SaveSettings("settings.json");
+                        }
+                }
+        }
+        else
+        {
+                TextDisabled("No accounts available to set a default.");
+        }
 }
