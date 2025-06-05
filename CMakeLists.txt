@@ -99,7 +99,12 @@ add_custom_command(TARGET altman POST_BUILD
 
 # Installation
 include(GNUInstallDirs)
+# Install the main executable directly in the install prefix
 install(TARGETS altman
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+        RUNTIME DESTINATION ".")
+# Install assets next to the executable
 install(DIRECTORY assets/
-        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/altman/assets")
+        DESTINATION "assets")
+# Install the ImGui static library
+install(TARGETS imgui
+        ARCHIVE DESTINATION "lib")
