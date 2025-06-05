@@ -199,13 +199,39 @@ void RenderHistoryTab() {
 
     BeginChild("##HistoryList", ImVec2(listWidth, 0), true); {
         lock_guard<mutex> lk(g_logs_mtx);
+        string lastDay;
+        string lastVersion;
+        bool indented = false;
+
         for (int i = 0; i < static_cast<int>(g_logs.size()); ++i) {
             const auto &logInfo = g_logs[i];
+
+            string thisDay = logInfo.timestamp.size() >= 10 ? logInfo.timestamp.substr(0, 10) : "Unknown";
+            string thisVersion = logInfo.version.empty() ? "" : logInfo.version;
+
+            if (thisDay != lastDay || thisVersion != lastVersion) {
+                if (indented)
+                    Unindent();
+                string header = thisDay;
+                if (!thisVersion.empty())
+                    header += "  v" + thisVersion;
+                else
+                    header += "  Unknown Version";
+                SeparatorText(header.c_str());
+                Indent();
+                indented = true;
+                lastDay = thisDay;
+                lastVersion = thisVersion;
+            }
+
             PushID(i);
             if (Selectable(niceLabel(logInfo).c_str(), g_selected_log_idx == i))
                 g_selected_log_idx = i;
             PopID();
         }
+
+        if (indented)
+            Unindent();
     }
     EndChild();
     SameLine();
