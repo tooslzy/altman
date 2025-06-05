@@ -13,39 +13,52 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+    - name: Checkout source
+      uses: actions/checkout@v3
 
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-          .\vcpkg\vcpkg install --triplet x64-windows-static
+    - name: Bootstrap vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        .\vcpkg\bootstrap-vcpkg.bat
+        .\vcpkg\vcpkg install --triplet x64-windows-static
 
-      - name: Configure
-        run: |
-          cmake -B build -S . ^
-            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake ^
-            -DVCPKG_TARGET_TRIPLET=x64-windows-static ^
-            -DCMAKE_BUILD_TYPE=Release ^
-            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\altman ^   # install tree goes to ./altman
-            -DCMAKE_INSTALL_BINDIR=. ^                                # altman.exe at the root of altman/
-            -DCMAKE_INSTALL_LIBDIR=lib ^                              # libraries → altman/lib
-            -DCMAKE_INSTALL_DATADIR=assets                            # assets  → altman/assets
+    - name: Configure
+      run: |
+        cmake -B build -S . ^
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static ^
+          -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
-        run: cmake --build build --config Release
+    - name: Build
+      run: cmake --build build --config Release
 
-      - name: Install
-        run: cmake --install build --config Release
+    - name: Install (to ./install)
+      run: cmake --install build --config Release --prefix install
 
-      - name: Package
-        run: |
-          Compress-Archive -Path altman\* -DestinationPath altman.zip -CompressionLevel Optimal
+    - name: Prepare archive layout
+      shell: pwsh
+      run: |
+        # rename the prefix to something nicer
+        Rename-Item -Path install -NewName altman
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: altman.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # ---- move executable up one level ----
+        Move-Item -Path altman\bin\altman.exe -Destination altman\
+        Remove-Item -Path altman\bin -Recurse
+
+        # ---- move assets out of share/altman -> assets ----
+        if (Test-Path altman\share\altman) {
+          Move-Item -Path altman\share\altman -Destination altman\assets
+        }
+        Remove-Item -Path altman\share -Recurse
+
+        # libs are already in altman\lib, nothing to change there
+
+    - name: Zip release
+      run: Compress-Archive -Path altman\* -DestinationPath altman.zip -CompressionLevel Optimal
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: altman.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
