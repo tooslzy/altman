@@ -253,7 +253,9 @@ void RenderHistoryTab() {
     EndChild();
     SameLine();
 
+    PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     BeginChild("##HistoryDetails", ImVec2(detailWidth, 0), true);
+    PopStyleVar();
     if (g_selected_log_idx >= 0) {
         lock_guard<mutex> lk(g_logs_mtx);
         if (g_selected_log_idx < static_cast<int>(g_logs.size())) {
