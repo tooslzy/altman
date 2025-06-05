@@ -253,6 +253,8 @@ void RenderHistoryTab() {
     EndChild();
     SameLine();
 
+    float desiredTextIndent = 8.0f;
+
     PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     BeginChild("##HistoryDetails", ImVec2(detailWidth, 0), true);
     PopStyleVar();
@@ -263,6 +265,8 @@ void RenderHistoryTab() {
             DisplayLogDetails(logInfo);
 
             Separator();
+
+            Indent(desiredTextIndent / 2);
             if (Button("Launch this game session")) {
                 if (!logInfo.placeId.empty() && !g_selectedAccountIds.empty()) {
                     uint64_t place_id_val = 0;
@@ -310,7 +314,12 @@ void RenderHistoryTab() {
                 TextUnformatted(line.c_str());
             }
             EndChild();
+            Unindent(desiredTextIndent / 2);
         }
+    } else {
+        Indent(desiredTextIndent);
+        TextWrapped("Select a log from the list to see details or launch the session.");
+        Unindent(desiredTextIndent);
     }
     EndChild();
 }
