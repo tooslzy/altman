@@ -11,6 +11,7 @@
 #include <tchar.h>
 #include "ui.h"
 #include <dwmapi.h>
+#include <shellscalingapi.h>
 
 #include <objbase.h>
 
@@ -170,7 +171,10 @@ int WINAPI WinMain(
         LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_32))
     };
     RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"AltMan", WS_OVERLAPPEDWINDOW, 100, 100, 950, 600, nullptr, nullptr,
+    UINT dpi = GetDpiForSystem();
+    int width = MulDiv(950, dpi, 96);
+    int height = MulDiv(600, dpi, 96);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"AltMan", WS_OVERLAPPEDWINDOW, 100, 100, width, height, nullptr, nullptr,
                                 hInstance,
                                 nullptr);
 
