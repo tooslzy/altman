@@ -25,7 +25,7 @@ namespace ModalPopup {
         if (ImGui::BeginPopupModal("Notification", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::TextWrapped("%s", current.message.c_str());
             ImGui::Spacing();
-            if (ImGui::Button("OK", ImVec2(120, 0))) {
+            if (ImGui::Button("OK", ImVec2(300, 0))) {
                 ImGui::CloseCurrentPopup();
                 queue.pop_front();
             }
