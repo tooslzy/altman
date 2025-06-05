@@ -31,8 +31,12 @@ jobs:
       - name: Install
         run: cmake --install build --config Release --prefix install
 
+      - name: Prepare archive
+        run: |
+          Rename-Item install altman
+
       - name: Package
-        run: Compress-Archive -Path install/* -DestinationPath altman.zip
+        run: Compress-Archive -Path altman -DestinationPath altman.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
