@@ -7,10 +7,11 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -23,20 +24,24 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=Release
+          cmake -B build -S . ^
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+            -DVCPKG_TARGET_TRIPLET=x64-windows-static ^
+            -DCMAKE_BUILD_TYPE=Release ^
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}\altman ^   # install tree goes to ./altman
+            -DCMAKE_INSTALL_BINDIR=. ^                                # altman.exe at the root of altman/
+            -DCMAKE_INSTALL_LIBDIR=lib ^                              # libraries → altman/lib
+            -DCMAKE_INSTALL_DATADIR=assets                            # assets  → altman/assets
 
       - name: Build
         run: cmake --build build --config Release
 
       - name: Install
-        run: cmake --install build --config Release --prefix install
-
-      - name: Prepare archive
-        run: |
-          Rename-Item install altman
+        run: cmake --install build --config Release
 
       - name: Package
-        run: Compress-Archive -Path altman -DestinationPath altman.zip
+        run: |
+          Compress-Archive -Path altman\* -DestinationPath altman.zip -CompressionLevel Optimal
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
