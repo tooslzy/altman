@@ -5,6 +5,8 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <vector>
+#include <utility>
 
 #include "logging.hpp"
 #include "notifications.h"
@@ -112,4 +114,22 @@ inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &c
 
 	LOG_INFO("Roblox process started successfully for place ID: " + to_string(placeId));
 	return executionInfo.hProcess;
+}
+inline void launchRobloxSequential(uint64_t placeId, const std::string &jobId,
+                                   const std::vector<std::pair<int, std::string>> &accounts) {
+    for (const auto &[accountId, cookie] : accounts) {
+        LOG_INFO("Launching Roblox for account ID: " + std::to_string(accountId) +
+                 " PlaceID: " + std::to_string(placeId) +
+                 (jobId.empty() ? "" : " JobID: " + jobId));
+        HANDLE proc = startRoblox(placeId, jobId, cookie);
+        if (proc) {
+            WaitForInputIdle(proc, INFINITE);
+            CloseHandle(proc);
+            LOG_INFO("Roblox launched successfully for account ID: " +
+                     std::to_string(accountId));
+        } else {
+            LOG_ERROR("Failed to start Roblox for account ID: " +
+                      std::to_string(accountId));
+        }
+    }
 }

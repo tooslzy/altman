@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cctype>
 #include <thread>
+#include <utility>
 #include <cstdio>
 
 #include "../components.h"
@@ -188,17 +189,19 @@ void RenderServersTab() {
                            ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
                            ImVec2(0, row_interaction_height))) {
                 if (!g_selectedAccountIds.empty()) {
-                    int accId = *g_selectedAccountIds.begin();
-                    auto accIt = find_if(g_accounts.begin(), g_accounts.end(),
-                                         [&](const AccountData &a) {
-                                             return a.id == accId;
-                                         });
-                    if (accIt != g_accounts.end()) {
+                    vector<pair<int, string>> accounts;
+                    for (int id : g_selectedAccountIds) {
+                        auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                         [&](const AccountData &a) { return a.id == id; });
+                        if (it != g_accounts.end())
+                            accounts.emplace_back(it->id, it->cookie);
+                    }
+                    if (!accounts.empty()) {
                         LOG_INFO("Joining server (left-click)...");
-                        thread([pId = g_current_placeId_servers, jId = srv.jobId, accCookie = accIt->cookie]() {
-                                    startRoblox(pId, jId, accCookie);
-                                })
-                                .detach();
+                        thread([accounts, pId = g_current_placeId_servers, jId = srv.jobId]() {
+                                  launchRobloxSequential(pId, jId, accounts);
+                              })
+                            .detach();
                     } else {
                         LOG_INFO("Selected account not found.");
                     }
@@ -217,17 +220,19 @@ void RenderServersTab() {
                 Separator();
                 if (MenuItem("Join Server")) {
                     if (!g_selectedAccountIds.empty()) {
-                        int accId = *g_selectedAccountIds.begin();
-                        auto accIt = find_if(g_accounts.begin(), g_accounts.end(),
-                                             [&](const AccountData &a) {
-                                                 return a.id == accId;
-                                             });
-                        if (accIt != g_accounts.end()) {
+                        vector<pair<int, string>> accounts;
+                        for (int id : g_selectedAccountIds) {
+                            auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                             [&](const AccountData &a) { return a.id == id; });
+                            if (it != g_accounts.end())
+                                accounts.emplace_back(it->id, it->cookie);
+                        }
+                        if (!accounts.empty()) {
                             LOG_INFO("Joining server (context menu)...");
-                            thread([pId = g_current_placeId_servers, jId = srv.jobId, accCookie = accIt->cookie]() {
-                                        startRoblox(pId, jId, accCookie);
-                                    })
-                                    .detach();
+                            thread([accounts, pId = g_current_placeId_servers, jId = srv.jobId]() {
+                                      launchRobloxSequential(pId, jId, accounts);
+                                  })
+                                .detach();
                         } else {
                             LOG_INFO("Selected account not found.");
                         }
