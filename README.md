@@ -35,6 +35,7 @@
 
 - **By JobID**: Enter the JobID in the quick join field
 - **By PlaceID**: Use the PlaceID to join any available server
+- **By Username**: Join a user directly if their joins are enabled
 
 > [!TIP]
 > You may also join games through the Servers or Games tabs.

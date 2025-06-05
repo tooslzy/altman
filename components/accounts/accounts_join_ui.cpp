@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "roblox_api.h"
+#include "threading.h"
 #include "../data.h"
 #include "../../ui.h"
 #include "../../utils/launcher.hpp"
@@ -25,6 +27,7 @@ using namespace std;
 static const char *join_types_local[] = {
     "Place ID",
     "PlaceId + JobId",
+    "Username",
 };
 
 static const char *GetJoinHintLocal(int idx) {
@@ -32,8 +35,6 @@ static const char *GetJoinHintLocal(int idx) {
         case 0:
             return "Enter Place ID...";
         case 2:
-            return "Enter Private Server Link...";
-        case 3:
             return "Enter Username...";
         default:
             return "";
@@ -64,15 +65,45 @@ void RenderJoinOptions() {
             return;
         }
 
+        if (join_type_combo_index == 2) {
+            string username = join_value_buf;
+            vector<pair<int, string> > accounts;
+            for (int id: g_selectedAccountIds) {
+                auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
+                                       [id](auto &a) { return a.id == id; });
+                if (it != g_accounts.end())
+                    accounts.emplace_back(it->id, it->cookie);
+            }
+            if (accounts.empty())
+                return;
+
+            Threading::newThread([username, accounts]() {
+                try {
+                    uint64_t uid = RobloxApi::getUserIdFromUsername(username);
+                    auto pres = RobloxApi::getPresences({uid}, accounts.front().second);
+                    auto it = pres.find(uid);
+                    if (it == pres.end() || it->second.presence != "InGame" ||
+                        it->second.placeId == 0 || it->second.gameId.empty()) {
+                        Status::Error("User is not joinable");
+                        return;
+                    }
+
+                    launchRobloxSequential(it->second.placeId, it->second.gameId, accounts);
+                } catch (const std::exception &e) {
+                    LOG_ERROR(std::string("Join by username failed: ") + e.what());
+                    Status::Error("Failed to join by username");
+                }
+            });
+            return;
+        }
+
         uint64_t placeId_val = 0;
         std::string jobId_str;
 
-        // ---- Validate the user input once ----
         try {
             placeId_val = std::stoull(join_value_buf);
 
             if (join_type_combo_index == 1) {
-                // PlaceId + JobId
                 jobId_str = join_jobid_buf;
             } else if (join_type_combo_index != 0) {
                 LOG_ERROR("Error: Join type not supported for direct launch");
