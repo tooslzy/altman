@@ -12,6 +12,7 @@
 #include "../../utils/launcher.hpp"
 #include "../../utils/status.h"
 #include "../../utils/logging.hpp"
+#include "../../utils/modal_popup.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -51,9 +52,12 @@ void RenderJoinOptions() {
 		                  IM_ARRAYSIZE(join_value_buf));
 	}
 
-	Separator();
-	if (Button(" \xEF\x8B\xB6  Join ")) {
-		for (int id: g_selectedAccountIds) {
+    Separator();
+    if (Button(" \xEF\x8B\xB6  Join ")) {
+            if (g_selectedAccountIds.empty()) {
+                    ModalPopup::Add("Select an account first.");
+            } else {
+                    for (int id: g_selectedAccountIds) {
 			auto it = find_if(g_accounts.begin(), g_accounts.end(),
 			                  [id](auto &a) {
 				                  return a.id == id;
@@ -130,3 +134,4 @@ void RenderJoinOptions() {
 		}
 	}
 }
+
