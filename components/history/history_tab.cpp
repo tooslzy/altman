@@ -18,6 +18,8 @@
 
 #include "../../utils/threading.h"
 #include "../../utils/launcher.hpp"
+#include "../../utils/modal_popup.h"
+#include "../../utils/status.h"
 #include "../../ui.h"
 #include "../data.h"
 
@@ -243,6 +245,13 @@ void RenderHistoryTab() {
                     }
                 } else {
                     LOG_INFO("Place ID missing or no account selected.");
+                    if (g_selectedAccountIds.empty()) {
+                        Status::Error("No account selected to open log entry.");
+                        ModalPopup::Add("Select an account first.");
+                    } else {
+                        Status::Error("Invalid log entry.");
+                        ModalPopup::Add("Invalid log entry.");
+                    }
                 }
             }
 
