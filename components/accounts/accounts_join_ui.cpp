@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "roblox_api.h"
+#include "threading.h"
 #include "../data.h"
 #include "../../ui.h"
 #include "../../utils/launcher.hpp"
@@ -65,8 +67,8 @@ void RenderJoinOptions() {
 
         if (join_type_combo_index == 2) {
             string username = join_value_buf;
-            vector<pair<int, string>> accounts;
-            for (int id : g_selectedAccountIds) {
+            vector<pair<int, string> > accounts;
+            for (int id: g_selectedAccountIds) {
                 auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
                                        [id](auto &a) { return a.id == id; });
                 if (it != g_accounts.end())
