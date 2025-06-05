@@ -71,42 +71,38 @@ void RenderJoinOptions() {
         try {
             placeId_val = std::stoull(join_value_buf);
 
-            if (join_type_combo_index == 1) {  // PlaceId + JobId
+            if (join_type_combo_index == 1) {
+                // PlaceId + JobId
                 jobId_str = join_jobid_buf;
             } else if (join_type_combo_index != 0) {
-                Status::Error("Error: Join type not supported for direct launch");
+                LOG_ERROR("Error: Join type not supported for direct launch");
                 return;
             }
         } catch (const std::invalid_argument &ia) {
-            Status::Error("Error: Invalid input for Place ID");
             LOG_ERROR("Invalid numeric input for join: " + std::string(ia.what()));
             return;
         } catch (const std::out_of_range &oor) {
-            Status::Error("Error: Input number too large for Place ID");
             LOG_ERROR("Numeric input out of range for join: " + std::string(oor.what()));
             return;
         }
 
-        for (int id : g_selectedAccountIds) {
+        for (int id: g_selectedAccountIds) {
             auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
                                    [id](auto &a) { return a.id == id; });
             if (it == g_accounts.end())
                 continue;
 
             std::thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
-                Status::Set("Attempting to launch Roblox...");
                 LOG_INFO("Launching Roblox for account " + std::to_string(account_id) +
-                         " PlaceID=" + std::to_string(placeId_val) +
-                         (jobId_str.empty() ? "" : " JobID=" + jobId_str));
+                    " PlaceID=" + std::to_string(placeId_val) +
+                    (jobId_str.empty() ? "" : " JobID=" + jobId_str));
 
                 HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
                 if (proc) {
                     WaitForInputIdle(proc, INFINITE);
                     CloseHandle(proc);
-                    Status::Set("Roblox launched (process ended or became idle).");
                     LOG_INFO("Roblox launched successfully for account " + std::to_string(account_id));
                 } else {
-                    Status::Error("Failed to start Roblox.");
                     LOG_ERROR("Failed to start Roblox for account " + std::to_string(account_id));
                 }
             }).detach();
