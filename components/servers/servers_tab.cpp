@@ -19,6 +19,7 @@
 #include "../../utils/roblox_api.h"
 #include "../../utils/status.h"
 #include "../../utils/launcher.hpp"
+#include "../../utils/modal_popup.h"
 #include "../../ui.h"
 
 using namespace ImGui;
@@ -207,6 +208,8 @@ void RenderServersTab() {
                     }
                 } else {
                     LOG_INFO("No account selected to join server.");
+                    Status::Error("No account selected to join server.");
+                    ModalPopup::Add("Select an account first.");
                 }
             }
 
@@ -238,6 +241,8 @@ void RenderServersTab() {
                         }
                     } else {
                         LOG_INFO("No account selected to join server.");
+                        Status::Error("No account selected to join server.");
+                        ModalPopup::Add("Select an account first.");
                     }
                 }
                 EndPopup();

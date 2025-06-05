@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include "modal_popup.h"
 
 using namespace std;
 
@@ -50,6 +51,11 @@ namespace Status {
                 }
             }
         }).detach();
+    }
+
+    inline void Error(const string &s) {
+        Set(s);
+        ModalPopup::Add(s);
     }
 
     inline string Get() {

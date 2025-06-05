@@ -13,6 +13,8 @@
 #include "../components.h"
 #include "../../utils/launcher.hpp"
 #include "../../utils/roblox_api.h"
+#include "../../utils/status.h"
+#include "../../utils/modal_popup.h"
 #include "../../ui.h"
 
 using namespace ImGui;
@@ -336,10 +338,11 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                           })
                         .detach();
                 } else {
-                    Status::Set("Selected account not found to launch game.");
+                    Status::Error("Selected account not found to launch game.");
                 }
             } else {
-                Status::Set("No account selected to launch game.");
+                Status::Error("No account selected to launch game.");
+                ModalPopup::Add("Select an account first.");
             }
         }
         SameLine();

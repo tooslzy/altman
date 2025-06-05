@@ -11,6 +11,7 @@
 #include "settings/settings.h"
 #include "utils/roblox_api.h"
 #include "utils/status.h"
+#include "utils/modal_popup.h"
 
 using namespace ImGui;
 
@@ -91,6 +92,8 @@ bool RenderUI() {
     }
 
     End();
+
+    ModalPopup::Render();
 
     return exit_from_menu || exit_from_content;
 }
