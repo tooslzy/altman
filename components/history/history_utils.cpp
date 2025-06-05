@@ -67,10 +67,11 @@ string friendlyTimestamp(const string &isoTimestamp) {
 }
 
 string niceLabel(const LogInfo &logInfo) {
-    if (!logInfo.timestamp.empty() && !logInfo.version.empty()) {
+    if (!logInfo.timestamp.empty()) {
         string date = logInfo.timestamp.substr(0, 10);
         string time = logInfo.timestamp.substr(11, 5);
-        return time + " " + date + "  v" + logInfo.version;
+        // Entries are grouped by version, so omit it from the label
+        return time + " " + date;
     }
     return logInfo.fileName;
 }
