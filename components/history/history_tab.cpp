@@ -137,44 +137,61 @@ static void DisplayOptionalText(const char *label, const string &value) {
 }
 
 static void DisplayLogDetails(const LogInfo &logInfo) {
-    PushID("file");
-    Text("File: %s", logInfo.fileName.c_str());
-    if (BeginPopupContextItem("CopyHistoryValue")) {
-        if (MenuItem("Copy")) {
-            SetClipboardText(logInfo.fileName.c_str());
-        }
-        EndPopup();
-    }
-    PopID();
+    float desiredTextIndent = 8.0f;
 
-    string timeStr = friendlyTimestamp(logInfo.timestamp);
-    PushID("time");
-    Text("Time: %s", timeStr.c_str());
-    if (BeginPopupContextItem("CopyHistoryValue")) {
-        if (MenuItem("Copy")) {
-            SetClipboardText(timeStr.c_str());
-        }
-        EndPopup();
-    }
-    PopID();
-    DisplayOptionalText("Version", logInfo.version);
-    DisplayOptionalText("Channel", logInfo.channel);
-    DisplayOptionalText("Place ID", logInfo.placeId);
-    DisplayOptionalText("Job ID", logInfo.jobId);
-    DisplayOptionalText("Universe ID", logInfo.universeId);
-    if (!logInfo.serverIp.empty()) {
-        string serverStr = logInfo.serverIp + ":" + logInfo.serverPort;
-        PushID("server");
-        Text("Server: %s", serverStr.c_str());
-        if (BeginPopupContextItem("CopyHistoryValue")) {
-            if (MenuItem("Copy")) {
-                SetClipboardText(serverStr.c_str());
+    ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
+                                 ImGuiTableFlags_SizingFixedFit;
+
+    PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, 4.0f));
+    if (BeginTable("HistoryInfoTable", 2, tableFlags)) {
+        TableSetupColumn("##historylabel", ImGuiTableColumnFlags_WidthFixed, 110.f);
+        TableSetupColumn("##historyvalue", ImGuiTableColumnFlags_WidthStretch);
+
+        auto addRow = [&](const char *label, const string &value) {
+            if (value.empty())
+                return;
+            TableNextRow();
+            TableSetColumnIndex(0);
+            Indent(desiredTextIndent);
+            Spacing();
+            TextUnformatted(label);
+            Spacing();
+            Unindent(desiredTextIndent);
+
+            TableSetColumnIndex(1);
+            Indent(desiredTextIndent);
+            Spacing();
+            PushID(label);
+            TextWrapped("%s", value.c_str());
+            if (BeginPopupContextItem("CopyHistoryValue")) {
+                if (MenuItem("Copy")) {
+                    SetClipboardText(value.c_str());
+                }
+                EndPopup();
             }
-            EndPopup();
+            PopID();
+            Spacing();
+            Unindent(desiredTextIndent);
+        };
+
+        addRow("File:", logInfo.fileName);
+
+        string timeStr = friendlyTimestamp(logInfo.timestamp);
+        addRow("Time:", timeStr);
+        addRow("Version:", logInfo.version);
+        addRow("Channel:", logInfo.channel);
+        addRow("Place ID:", logInfo.placeId);
+        addRow("Job ID:", logInfo.jobId);
+        addRow("Universe ID:", logInfo.universeId);
+        if (!logInfo.serverIp.empty()) {
+            string serverStr = logInfo.serverIp + ":" + logInfo.serverPort;
+            addRow("Server:", serverStr);
         }
-        PopID();
+        addRow("User ID:", logInfo.userId);
+
+        EndTable();
     }
-    DisplayOptionalText("User ID", logInfo.userId);
+    PopStyleVar();
 }
 
 void RenderHistoryTab() {
@@ -236,7 +253,11 @@ void RenderHistoryTab() {
     EndChild();
     SameLine();
 
+    float desiredTextIndent = 8.0f;
+
+    PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     BeginChild("##HistoryDetails", ImVec2(detailWidth, 0), true);
+    PopStyleVar();
     if (g_selected_log_idx >= 0) {
         lock_guard<mutex> lk(g_logs_mtx);
         if (g_selected_log_idx < static_cast<int>(g_logs.size())) {
@@ -244,6 +265,8 @@ void RenderHistoryTab() {
             DisplayLogDetails(logInfo);
 
             Separator();
+
+            Indent(desiredTextIndent / 2);
             if (Button("Launch this game session")) {
                 if (!logInfo.placeId.empty() && !g_selectedAccountIds.empty()) {
                     uint64_t place_id_val = 0;
@@ -291,7 +314,12 @@ void RenderHistoryTab() {
                 TextUnformatted(line.c_str());
             }
             EndChild();
+            Unindent(desiredTextIndent / 2);
         }
+    } else {
+        Indent(desiredTextIndent);
+        TextWrapped("Select a log from the list to see details or launch the session.");
+        Unindent(desiredTextIndent);
     }
     EndChild();
 }
