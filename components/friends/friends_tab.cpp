@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <atomic>
+#include <utility>
 #include <cctype>
 
 
@@ -341,7 +342,18 @@ void RenderFriendsTab() {
             bool canJoin = (row.presence == "InGame" && row.placeId && !row.gameId.empty());
             BeginDisabled(!canJoin);
             if (Button((string(ICON_JOIN) + " Join Game").c_str()) && canJoin) {
-                startRoblox(row.placeId, row.gameId, acct.cookie);
+                vector<pair<int, string>> accounts;
+                for (int id : g_selectedAccountIds) {
+                    auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                      [&](const AccountData &a) { return a.id == id; });
+                    if (it != g_accounts.end())
+                        accounts.emplace_back(it->id, it->cookie);
+                }
+                if (!accounts.empty()) {
+                    Threading::newThread([row, accounts]() {
+                        launchRobloxSequential(row.placeId, row.gameId, accounts);
+                    });
+                }
             }
 
             EndDisabled();

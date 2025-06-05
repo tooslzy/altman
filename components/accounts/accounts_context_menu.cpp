@@ -36,7 +36,6 @@ using namespace std;
 void LaunchBrowserWithCookie(const AccountData &account) {
     if (account.cookie.empty()) {
         LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
-        Status::Error("Cookie is empty for this account");
         return;
     }
 

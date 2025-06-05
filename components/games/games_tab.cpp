@@ -8,6 +8,7 @@
 #include <string>
 #include <algorithm>
 #include <thread>
+#include <utility>
 
 #include "../components.h"
 #include "../../utils/launcher.hpp"
@@ -324,16 +325,18 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
         Indent(desiredTextIndent / 2);
         if (Button("Launch Game")) {
             if (!g_selectedAccountIds.empty()) {
-                int accountId = *g_selectedAccountIds.begin();
-                auto accountIterator = find_if(g_accounts.begin(), g_accounts.end(),
-                                               [&](const AccountData &account) {
-                                                   return account.id == accountId;
-                                               });
-                if (accountIterator != g_accounts.end()) {
-                    thread([placeId = gameInfo.placeId, accountCookie = accountIterator->cookie]() {
-                                startRoblox(placeId, "", accountCookie);
-                            })
-                            .detach();
+                vector<pair<int, string>> accounts;
+                for (int id : g_selectedAccountIds) {
+                    auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                      [&](const AccountData &a) { return a.id == id; });
+                    if (it != g_accounts.end())
+                        accounts.emplace_back(it->id, it->cookie);
+                }
+                if (!accounts.empty()) {
+                    thread([placeId = gameInfo.placeId, accounts]() {
+                              launchRobloxSequential(placeId, "", accounts);
+                          })
+                        .detach();
                 } else {
                     Status::Error("Selected account not found to launch game.");
                 }

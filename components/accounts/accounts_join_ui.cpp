@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <thread>
 #include <stdexcept>
+#include <utility>
 
 #include "../data.h"
 #include "../../ui.h"
@@ -39,16 +40,20 @@ static const char *GetJoinHintLocal(int idx) {
     }
 }
 
+
 void RenderJoinOptions() {
     Spacing();
     Text("Join Options");
     Spacing();
     Combo(" Join Type", &join_type_combo_index, join_types_local, IM_ARRAYSIZE(join_types_local));
+
     if (join_type_combo_index == 1) {
         InputTextWithHint("##JoinPlaceId", "Enter Place ID...", join_value_buf, IM_ARRAYSIZE(join_value_buf));
         InputTextWithHint("##JoinJobId", "Enter Job ID...", join_jobid_buf, IM_ARRAYSIZE(join_jobid_buf));
     } else {
-        InputTextWithHint("##JoinValue", GetJoinHintLocal(join_type_combo_index), join_value_buf,
+        InputTextWithHint("##JoinValue",
+                          GetJoinHintLocal(join_type_combo_index),
+                          join_value_buf,
                           IM_ARRAYSIZE(join_value_buf));
     }
 
@@ -56,82 +61,51 @@ void RenderJoinOptions() {
     if (Button(" \xEF\x8B\xB6  Join ")) {
         if (g_selectedAccountIds.empty()) {
             ModalPopup::Add("Select an account first.");
-        } else {
-            for (int id: g_selectedAccountIds) {
-                auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                                  [id](auto &a) {
-                                      return a.id == id;
-                                  });
-                if (it == g_accounts.end())
-                    continue;
+            return;
+        }
 
-                uint64_t placeId_val = 0;
-                string jobId_str;
-                try {
-                    if (join_type_combo_index == 0) {
-                        placeId_val = stoull(join_value_buf);
-                        LOG_INFO(
-                            "Attempting to join Place ID: " + std::string(join_value_buf) + " for account ID: " + std::
-                            to_string(it->id));
-                    } else if (join_type_combo_index == 1) {
-                        placeId_val = stoull(join_value_buf);
-                        jobId_str = join_jobid_buf;
-                        LOG_INFO(
-                            "Attempting to join Place ID: " + std::string(join_value_buf) + " with Job ID: " + jobId_str
-                            +
-                            " for account ID: " + std::to_string(it->id));
-                    } else {
-                        printf("[Error] Join type %d not supported for direct launch\n", join_type_combo_index);
-                        LOG_ERROR(
-                            "Join type " + std::to_string(join_type_combo_index) +
-                            " not supported for direct launch for account ID: " + std::to_string(it->id));
-                        Status::Error("Error: Join type not supported for direct launch");
-                        continue;
-                    }
-                } catch (const invalid_argument &ia) {
-                    printf("[Error] Invalid numeric input: '%s' or '%s'. Details: %s\n", join_value_buf, join_jobid_buf,
-                           ia.what());
-                    Status::Error("Error: Invalid input for Place ID");
-                    continue;
-                }
-                catch (const out_of_range &oor) {
-                    printf("[Error] Numeric input out of range: '%s' or '%s'. Details: %s\n", join_value_buf,
-                           join_jobid_buf, oor.what());
-                    LOG_ERROR(
-                        "Numeric input out of range for join: PlaceID='" + std::string(join_value_buf) + "', JobID='" +
-                        std
-                        ::string(join_jobid_buf) + "'. Details: " + oor.what());
-                    Status::Error("Error: Input number too large for Place ID");
-                    continue;
-                }
+        uint64_t placeId_val = 0;
+        std::string jobId_str;
 
-                thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
-                            Status::Set("Attempting to launch Roblox...");
-                            LOG_INFO(
-                                "Launching Roblox for account ID: " + std::to_string(account_id) + " PlaceID: " + std::
-                                to_string
-                                (placeId_val) + (jobId_str.empty() ? "" : " JobID: " + jobId_str));
+        // ---- Validate the user input once ----
+        try {
+            placeId_val = std::stoull(join_value_buf);
 
-                            HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
-                            if (proc) {
-                                WaitForInputIdle(proc, INFINITE);
-                                CloseHandle(proc);
-                                Status::Set("Roblox launched (process ended or became idle).");
-                                LOG_INFO(
-                                    "Roblox launched successfully for account ID: " + std::to_string(account_id) +
-                                    " PlaceID: "
-                                    + std::to_string(placeId_val) + (jobId_str.empty() ? "" : " JobID: " + jobId_str));
-                            } else {
-                                Status::Error("Failed to start Roblox.");
-                                LOG_ERROR(
-                                    "Failed to start Roblox for account ID: " + std::to_string(account_id) +
-                                    " PlaceID: " +
-                                    std
-                                    ::to_string(placeId_val) + (jobId_str.empty() ? "" : " JobID: " + jobId_str));
-                            }
-                        })
-                        .detach();
+            if (join_type_combo_index == 1) {
+                // PlaceId + JobId
+                jobId_str = join_jobid_buf;
+            } else if (join_type_combo_index != 0) {
+                LOG_ERROR("Error: Join type not supported for direct launch");
+                return;
             }
+        } catch (const std::invalid_argument &ia) {
+            LOG_ERROR("Invalid numeric input for join: " + std::string(ia.what()));
+            return;
+        } catch (const std::out_of_range &oor) {
+            LOG_ERROR("Numeric input out of range for join: " + std::string(oor.what()));
+            return;
+        }
+
+        for (int id: g_selectedAccountIds) {
+            auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
+                                   [id](auto &a) { return a.id == id; });
+            if (it == g_accounts.end())
+                continue;
+
+            std::thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
+                LOG_INFO("Launching Roblox for account " + std::to_string(account_id) +
+                    " PlaceID=" + std::to_string(placeId_val) +
+                    (jobId_str.empty() ? "" : " JobID=" + jobId_str));
+
+                HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
+                if (proc) {
+                    WaitForInputIdle(proc, INFINITE);
+                    CloseHandle(proc);
+                    LOG_INFO("Roblox launched successfully for account " + std::to_string(account_id));
+                } else {
+                    LOG_ERROR("Failed to start Roblox for account " + std::to_string(account_id));
+                }
+            }).detach();
         }
     }
 }

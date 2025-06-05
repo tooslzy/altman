@@ -9,6 +9,7 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <utility>
 #include <algorithm>
 
 #include "history.h"
@@ -226,17 +227,19 @@ void RenderHistoryTab() {
                     }
 
                     if (place_id_val > 0) {
-                        int accId = *g_selectedAccountIds.begin();
-                        auto accIt = find_if(g_accounts.begin(), g_accounts.end(),
-                                             [&](const AccountData &a) {
-                                                 return a.id == accId;
-                                             });
-                        if (accIt != g_accounts.end()) {
+                        vector<pair<int, string>> accounts;
+                        for (int id : g_selectedAccountIds) {
+                            auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                             [&](const AccountData &a) { return a.id == id; });
+                            if (it != g_accounts.end())
+                                accounts.emplace_back(it->id, it->cookie);
+                        }
+                        if (!accounts.empty()) {
                             LOG_INFO("Launching game from history...");
-                            thread([place_id_val, jobId_str = logInfo.jobId, cookie = accIt->cookie]() {
-                                        startRoblox(place_id_val, jobId_str, cookie);
-                                    })
-                                    .detach();
+                            thread([place_id_val, jobId = logInfo.jobId, accounts]() {
+                                      launchRobloxSequential(place_id_val, jobId, accounts);
+                                  })
+                                .detach();
                         } else {
                             LOG_INFO("Selected account not found.");
                         }
