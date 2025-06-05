@@ -245,10 +245,13 @@ void RenderHistoryTab() {
                     }
                 } else {
                     LOG_INFO("Place ID missing or no account selected.");
-                    if (g_selectedAccountIds.empty())
+                    if (g_selectedAccountIds.empty()) {
+                        Status::Error("No account selected to open log entry.");
                         ModalPopup::Add("Select an account first.");
-                    else
+                    } else {
+                        Status::Error("Invalid log entry.");
                         ModalPopup::Add("Invalid log entry.");
+                    }
                 }
             }
 

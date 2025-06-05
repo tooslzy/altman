@@ -84,7 +84,7 @@ void RenderJoinOptions() {
 					LOG_ERROR(
 						"Join type " + std::to_string(join_type_combo_index) +
 						" not supported for direct launch for account ID: " + std::to_string(it->id));
-					Status::Set("Error: Join type not supported for direct launch");
+                                        Status::Error("Error: Join type not supported for direct launch");
 					continue;
 				}
 			} catch (const invalid_argument &ia) {
@@ -93,7 +93,7 @@ void RenderJoinOptions() {
 				LOG_ERROR(
 					"Invalid numeric input for join: PlaceID='" + std::string(join_value_buf) + "', JobID='" + std::
 					string(join_jobid_buf) + "'. Details: " + ia.what());
-				Status::Set("Error: Invalid input for Place ID");
+                                Status::Error("Error: Invalid input for Place ID");
 				continue;
 			}
 			catch (const out_of_range &oor) {
@@ -102,7 +102,7 @@ void RenderJoinOptions() {
 				LOG_ERROR(
 					"Numeric input out of range for join: PlaceID='" + std::string(join_value_buf) + "', JobID='" + std
 					::string(join_jobid_buf) + "'. Details: " + oor.what());
-				Status::Set("Error: Input number too large for Place ID");
+                                Status::Error("Error: Input number too large for Place ID");
 				continue;
 			}
 
@@ -123,7 +123,7 @@ void RenderJoinOptions() {
 								" PlaceID: "
 								+ std::to_string(placeId_val) + (jobId_str.empty() ? "" : " JobID: " + jobId_str));
 						} else {
-							Status::Set("Failed to start Roblox.");
+                                                        Status::Error("Failed to start Roblox.");
 							LOG_ERROR(
 								"Failed to start Roblox for account ID: " + std::to_string(account_id) + " PlaceID: " +
 								std

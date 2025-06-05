@@ -335,10 +335,10 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                             })
                             .detach();
                 } else {
-                    Status::Set("Selected account not found to launch game.");
+                    Status::Error("Selected account not found to launch game.");
                 }
             } else {
-                Status::Set("No account selected to launch game.");
+                Status::Error("No account selected to launch game.");
                 ModalPopup::Add("Select an account first.");
             }
         }

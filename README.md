@@ -18,6 +18,7 @@
 - **Server Browser** - Browse active servers for any Roblox game
 - **Game Search** - Search and discover Roblox games
 - **Log Parser** - Converts Roblox log files into human-readable format
+- **Modal Notifications** - Important warnings and errors pop up as modal dialogs
 
 ---
 

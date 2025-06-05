@@ -205,6 +205,7 @@ void RenderServersTab() {
                     }
                 } else {
                     LOG_INFO("No account selected to join server.");
+                    Status::Error("No account selected to join server.");
                     ModalPopup::Add("Select an account first.");
                 }
             }
@@ -235,6 +236,7 @@ void RenderServersTab() {
                         }
                     } else {
                         LOG_INFO("No account selected to join server.");
+                        Status::Error("No account selected to join server.");
                         ModalPopup::Add("Select an account first.");
                     }
                 }
