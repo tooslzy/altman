@@ -68,10 +68,17 @@ string friendlyTimestamp(const string &isoTimestamp) {
 
 string niceLabel(const LogInfo &logInfo) {
     if (!logInfo.timestamp.empty()) {
-        string date = logInfo.timestamp.substr(0, 10);
-        string time = logInfo.timestamp.substr(11, 5);
-        // Entries are grouped by version, so omit it from the label
-        return time + " " + date;
+        string hourStr = logInfo.timestamp.substr(11, 2);
+        string minute = logInfo.timestamp.substr(14, 2);
+        int hour = stoi(hourStr);
+        int hour12 = hour % 12;
+        if (hour12 == 0)
+            hour12 = 12;
+        string ampm = hour >= 12 ? "PM" : "AM";
+        ostringstream ss;
+        ss << hour12 << ':' << minute << ' ' << ampm;
+        // Entries are grouped by day and version, so omit them from the label
+        return ss.str();
     }
     return logInfo.fileName;
 }
