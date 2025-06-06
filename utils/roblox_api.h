@@ -389,7 +389,7 @@ namespace RobloxApi {
 
         if (resp.status_code != 200) {
             LOG_INFO("Failed to fetch voice settings: HTTP " +
-                     to_string(resp.status_code));
+                to_string(resp.status_code));
             if (resp.status_code == 403)
                 return {"Banned", 0};
             return {"Unknown", 0};
@@ -412,7 +412,8 @@ namespace RobloxApi {
             return {"Enabled", 0};
         if (eligible)
             return {"Disabled", 0};
-        return {"Not Eligible", 0};
+
+        return {"Disabled", 0};
     }
 
     struct FriendDetail {
