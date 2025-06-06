@@ -591,4 +591,37 @@ namespace RobloxApi {
         }
         return success;
     }
+
+    inline bool unfriend(const string &targetUserId,
+                         const string &cookie,
+                         string *outResponse = nullptr) {
+        string url = "https://friends.roblox.com/v1/users/" + targetUserId +
+                     "/unfriend";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            return false;
+        }
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            }
+        );
+
+        if (outResponse) *outResponse = resp.text;
+
+        if (resp.status_code != 200) {
+            cerr << "unfriend failed HTTP " << resp.status_code << ": " << resp.text << "\n";
+            return false;
+        }
+
+        return true;
+    }
 }

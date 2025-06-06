@@ -190,6 +190,27 @@ void RenderFriendsTab() {
                 Unindent(indent);
             }
 
+            if (BeginPopupContextItem("FriendRowContextMenu")) {
+                if (MenuItem("Unfriend")) {
+                    uint64_t friendId = f.id;
+                    string cookieCopy = acct.cookie;
+                    Threading::newThread([friendId, cookieCopy]() {
+                        string resp;
+                        bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
+                        if (ok) {
+                            erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
+                            if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) && g_friends[g_selectedFriendIdx].id == friendId) {
+                                g_selectedFriendIdx = -1;
+                                g_selectedFriend = {};
+                            }
+                        } else {
+                            cerr << "Unfriend failed: " << resp << "\n";
+                        }
+                    });
+                }
+                EndPopup();
+            }
+
             if (clicked) {
                 g_selectedFriendIdx = static_cast<int>(i);
                 if (g_selectedFriend.id != f.id) {
