@@ -16,6 +16,7 @@
 #include "../../utils/status.h"
 #include "../../utils/modal_popup.h"
 #include "../../ui.h"
+#include "../servers/servers_utils.h"
 
 using namespace ImGui;
 using namespace std;
@@ -56,6 +57,8 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
     if (!favoriteGamesList.empty()) {
         for (int index = 0; index < static_cast<int>(favoriteGamesList.size()); ++index) {
             const auto &game = favoriteGamesList[index];
+            if (searchBuffer[0] != '\0' && !containsCI(game.name, searchBuffer))
+                continue;
             PushID(("fav" + to_string(game.universeId)).c_str());
             TextUnformatted("\xEF\x80\x85");
             SameLine();
