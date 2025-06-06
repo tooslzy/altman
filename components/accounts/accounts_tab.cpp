@@ -7,12 +7,16 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <unordered_map>
 
 #include "../../utils/roblox_api.h"
 #include "../components.h"
 #include "../../utils/time_utils.h"
+#include "../../utils/logging.hpp"
+#include "../../utils/status.h"
 #include "../../ui.h"
 #include "../data.h"
+#include "../../utils/threading.h"
 
 using namespace ImGui;
 
@@ -88,6 +92,28 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
                     g_selectedAccountIds.clear();
                     if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
                 }
+            }
+
+            static std::unordered_map<int, double> holdStartTimes;
+            if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
+                holdStartTimes[account.id] = ImGui::GetTime();
+            }
+            if (IsItemActive()) {
+                auto it = holdStartTimes.find(account.id);
+                if (it != holdStartTimes.end() && (ImGui::GetTime() - it->second) >= 0.65f) {
+                    holdStartTimes.erase(it);
+                    if (!account.cookie.empty()) {
+                        LOG_INFO(
+                            "Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id
+                            ) + ")");
+                        Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
+                    } else {
+                        LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
+                        Status::Error("Cookie is empty for this account");
+                    }
+                }
+            } else {
+                holdStartTimes.erase(account.id);
             }
 
             string context_menu_id = string(table_id) + "_ContextMenu_" + to_string(account.id);
