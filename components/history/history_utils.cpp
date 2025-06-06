@@ -67,18 +67,39 @@ string friendlyTimestamp(const string &isoTimestamp) {
 }
 
 string niceLabel(const LogInfo &logInfo) {
-    if (!logInfo.timestamp.empty()) {
-        string hourStr = logInfo.timestamp.substr(11, 2);
-        string minute = logInfo.timestamp.substr(14, 2);
-        int hour = stoi(hourStr);
-        int hour12 = hour % 12;
-        if (hour12 == 0)
-            hour12 = 12;
-        string ampm = hour >= 12 ? "PM" : "AM";
-        ostringstream ss;
-        ss << hour12 << ':' << minute << ' ' << ampm;
-        // Entries are grouped by day and version, so omit them from the label
-        return ss.str();
+    if (logInfo.timestamp.size() >= 19) {
+        tm timeStruct{};
+        timeStruct.tm_year = stoi(logInfo.timestamp.substr(0, 4)) - 1900;
+        timeStruct.tm_mon = stoi(logInfo.timestamp.substr(5, 2)) - 1;
+        timeStruct.tm_mday = stoi(logInfo.timestamp.substr(8, 2));
+        timeStruct.tm_hour = stoi(logInfo.timestamp.substr(11, 2));
+        timeStruct.tm_min = stoi(logInfo.timestamp.substr(14, 2));
+        timeStruct.tm_sec = stoi(logInfo.timestamp.substr(17, 2));
+
+#ifdef _WIN32
+        time_t timeValue = _mkgmtime(&timeStruct);
+#else
+        time_t timeValue = timegm(&timeStruct);
+#endif
+
+        if (timeValue != static_cast<time_t>(-1)) {
+            tm localTime_val;
+#ifdef _WIN32
+            localtime_s(&localTime_val, &timeValue);
+            tm *localTime = &localTime_val;
+#else
+            tm *localTime = localtime(&timeValue);
+#endif
+            if (localTime) {
+                int hour12 = localTime->tm_hour % 12;
+                if (hour12 == 0)
+                    hour12 = 12;
+                ostringstream ss;
+                ss << hour12 << ':' << setfill('0') << setw(2) << localTime->tm_min
+                   << (localTime->tm_hour >= 12 ? " PM" : " AM");
+                return ss.str();
+            }
+        }
     }
     return logInfo.fileName;
 }
