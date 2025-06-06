@@ -100,10 +100,12 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             }
             if (IsItemActive()) {
                 auto it = holdStartTimes.find(account.id);
-                if (it != holdStartTimes.end() && (ImGui::GetTime() - it->second) >= 1.5f) {
+                if (it != holdStartTimes.end() && (ImGui::GetTime() - it->second) >= 0.65f) {
                     holdStartTimes.erase(it);
                     if (!account.cookie.empty()) {
-                        LOG_INFO("Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id) + ")");
+                        LOG_INFO(
+                            "Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id
+                            ) + ")");
                         Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
                     } else {
                         LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
