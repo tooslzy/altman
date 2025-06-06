@@ -45,6 +45,9 @@ static void RenderGameSearch() {
     if (Button(" Search  \xEF\x80\x82 ") && searchBuffer[0] != '\0') {
         selectedIndex = -1;
         gamesList = RobloxApi::searchGames(searchBuffer);
+        erase_if(gamesList, [&](const GameInfo &g) {
+            return favoriteGameIds.contains(g.universeId);
+        });
         gameDetailCache.clear();
     }
 }
