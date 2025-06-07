@@ -6,6 +6,7 @@
 #include <set>
 #include <array>
 #include <ctime>
+#include <unordered_map>
 #include <imgui.h>
 
 struct AccountData {
@@ -41,6 +42,8 @@ struct FriendInfo {
 extern std::vector<FavoriteGame> g_favorites;
 extern std::vector<AccountData> g_accounts;
 extern std::vector<FriendInfo> g_friends;
+extern std::unordered_map<int, std::vector<FriendInfo>> g_accountFriends;
+extern std::unordered_map<int, std::vector<FriendInfo>> g_unfriendedFriends;
 extern std::set<int> g_selectedAccountIds;
 extern ImVec4 g_accentColor;
 
