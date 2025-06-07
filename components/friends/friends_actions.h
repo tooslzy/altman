@@ -9,11 +9,12 @@
 
 namespace FriendsActions
 {
-	void RefreshFullFriendsList(
-		const std::string& userId,
-		const std::string& cookie,
-		std::vector<FriendInfo>& outFriendsList,
-		std::atomic<bool>& loadingFlag);
+        void RefreshFullFriendsList(
+                int accountId,
+                const std::string& userId,
+                const std::string& cookie,
+                std::vector<FriendInfo>& outFriendsList,
+                std::atomic<bool>& loadingFlag);
 
 	void FetchFriendDetails(
 		const std::string& friendId,
