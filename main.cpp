@@ -120,6 +120,7 @@ int WINAPI WinMain(
 
     Data::LoadSettings("settings.json");
     Data::LoadAccounts("accounts.json");
+    Data::LoadFriends("friends.json");
 
     for (auto &acct: g_accounts) {
         if (!acct.userId.empty()) {

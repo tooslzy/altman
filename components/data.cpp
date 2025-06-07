@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <filesystem>
+#include <unordered_map>
 #include <windows.h>
 #include <dpapi.h>
 
@@ -22,6 +23,8 @@ set<int> g_selectedAccountIds;
 
 vector<FavoriteGame> g_favorites;
 vector<FriendInfo> g_friends;
+unordered_map<int, vector<FriendInfo>> g_accountFriends;
+unordered_map<int, vector<FriendInfo>> g_unfriendedFriends;
 
 int g_defaultAccountId = -1;
 array<char, 128> s_jobIdBuffer = {};
@@ -250,5 +253,84 @@ namespace Data {
         out << j.dump(4);
         LOG_INFO("Saved defaultAccountId=" + std::to_string(g_defaultAccountId));
         LOG_INFO("Saved statusRefreshInterval=" + std::to_string(g_statusRefreshInterval));
+    }
+
+    void LoadFriends(const std::string &filename) {
+        std::ifstream fin{filename};
+        if (!fin.is_open()) {
+            LOG_INFO("No " + filename + ", starting with empty friend lists");
+            return;
+        }
+        try {
+            json j; fin >> j;
+            g_accountFriends.clear();
+            g_unfriendedFriends.clear();
+
+            auto parseList = [](const json &arr) {
+                std::vector<FriendInfo> out;
+                for (auto &f : arr) {
+                    FriendInfo fi;
+                    fi.id = f.value("id", 0ULL);
+                    fi.username = f.value("username", "");
+                    fi.displayName = f.value("displayName", "");
+                    out.push_back(std::move(fi));
+                }
+                return out;
+            };
+
+            if (j.contains("friends") || j.contains("unfriended")) {
+                for (auto it = j["friends"].begin(); it != j["friends"].end(); ++it) {
+                    int acctId = std::stoi(it.key());
+                    g_accountFriends[acctId] = parseList(it.value());
+                }
+                if (j.contains("unfriended")) {
+                    for (auto it = j["unfriended"].begin(); it != j["unfriended"].end(); ++it) {
+                        int acctId = std::stoi(it.key());
+                        g_unfriendedFriends[acctId] = parseList(it.value());
+                    }
+                }
+            } else {
+                for (auto it = j.begin(); it != j.end(); ++it) {
+                    int acctId = std::stoi(it.key());
+                    g_accountFriends[acctId] = parseList(it.value());
+                }
+            }
+
+            LOG_INFO("Loaded friend data for " + std::to_string(g_accountFriends.size()) + " accounts");
+        } catch (const std::exception &e) {
+            LOG_ERROR("Failed to parse " + filename + ": " + e.what());
+        }
+    }
+
+    void SaveFriends(const std::string &filename) {
+        json jFriends = json::object();
+        for (const auto &[acctId, friends] : g_accountFriends) {
+            json arr = json::array();
+            for (const auto &f : friends) {
+                arr.push_back({{"id", f.id}, {"username", f.username}, {"displayName", f.displayName}});
+            }
+            jFriends[std::to_string(acctId)] = std::move(arr);
+        }
+
+        json jUnfriended = json::object();
+        for (const auto &[acctId, list] : g_unfriendedFriends) {
+            json arr = json::array();
+            for (const auto &f : list) {
+                arr.push_back({{"id", f.id}, {"username", f.username}, {"displayName", f.displayName}});
+            }
+            jUnfriended[std::to_string(acctId)] = std::move(arr);
+        }
+
+        json j;
+        j["friends"] = std::move(jFriends);
+        j["unfriended"] = std::move(jUnfriended);
+
+        std::ofstream out{filename};
+        if (!out.is_open()) {
+            LOG_ERROR("Could not open '" + filename + "' for writing");
+            return;
+        }
+        out << j.dump(4);
+        LOG_INFO("Saved friend data for " + std::to_string(g_accountFriends.size()) + " accounts");
     }
 }
