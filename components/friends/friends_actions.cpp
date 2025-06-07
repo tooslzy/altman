@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <unordered_set>
 
 using namespace std;
 
@@ -20,7 +19,6 @@ static int presencePriority(const string &p) {
 
 namespace FriendsActions {
     void RefreshFullFriendsList(
-        int accountId,
         const string &userId,
         const string &cookie,
         vector<FriendInfo> &outFriendsList,
@@ -97,23 +95,6 @@ namespace FriendsActions {
              });
 
         outFriendsList = move(list);
-
-        vector<FriendInfo> unfriended;
-        {
-            unordered_set<uint64_t> newIds;
-            for (const auto &f : outFriendsList)
-                newIds.insert(f.id);
-            auto itOld = g_accountFriends.find(accountId);
-            if (itOld != g_accountFriends.end()) {
-                for (const auto &oldF : itOld->second) {
-                    if (!newIds.contains(oldF.id))
-                        unfriended.push_back(oldF);
-                }
-            }
-            g_accountFriends[accountId] = outFriendsList;
-        }
-        g_unfriendedFriends[accountId] = std::move(unfriended);
-        Data::SaveFriends();
         loadingFlag = false;
         LOG_INFO("Friends list updated.");
     }
