@@ -23,6 +23,7 @@ static int g_selectedFriendIdx = -1;
 static RobloxApi::FriendDetail g_selectedFriend;
 static atomic<bool> g_friendDetailsLoading{false};
 static atomic<bool> g_friendsLoading{false};
+static vector<FriendInfo> g_unfriended;
 
 static int g_lastAcctIdForFriends = -1;
 
@@ -72,6 +73,7 @@ void RenderFriendsTab() {
         return;
     }
     const AccountData &acct = *it;
+    g_unfriended = g_unfriendedFriends[currentAcctId];
 
     if (currentAcctId != g_lastAcctIdForFriends) {
         g_friends.clear();
@@ -79,10 +81,11 @@ void RenderFriendsTab() {
         g_selectedFriend = {};
         g_friendsLoading = false;
         g_friendDetailsLoading = false;
+        g_unfriended = g_unfriendedFriends[currentAcctId];
         g_lastAcctIdForFriends = currentAcctId;
 
         if (!acct.userId.empty()) {
-            Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.userId, acct.cookie, ref(g_friends),
+            Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie, ref(g_friends),
                                  ref(g_friendsLoading));
         }
     }
@@ -91,7 +94,7 @@ void RenderFriendsTab() {
     if (Button((string(ICON_REFRESH) + "Refresh").c_str()) && !acct.userId.empty()) {
         g_selectedFriendIdx = -1;
         g_selectedFriend = {};
-        Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.userId, acct.cookie, ref(g_friends),
+        Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie, ref(g_friends),
                              ref(g_friendsLoading));
     }
     SameLine();
@@ -194,7 +197,8 @@ void RenderFriendsTab() {
                 if (MenuItem("Unfriend")) {
                     uint64_t friendId = f.id;
                     string cookieCopy = acct.cookie;
-                    Threading::newThread([friendId, cookieCopy]() {
+                    int acctIdCopy = acct.id;
+                    Threading::newThread([friendId, cookieCopy, acctIdCopy]() {
                         string resp;
                         bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
                         if (ok) {
@@ -203,6 +207,8 @@ void RenderFriendsTab() {
                                 g_selectedFriendIdx = -1;
                                 g_selectedFriend = {};
                             }
+                            erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) { return fi.id == friendId; });
+                            Data::SaveFriends();
                         } else {
                             cerr << "Unfriend failed: " << resp << "\n";
                         }
@@ -223,6 +229,18 @@ void RenderFriendsTab() {
                 }
             }
             PopID();
+        }
+
+        if (!g_unfriended.empty()) {
+            Separator();
+            PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
+            TextUnformatted("Unfriended:");
+            for (const auto &uf : g_unfriended) {
+                string name = uf.displayName.empty() || uf.displayName == uf.username ?
+                               uf.username : uf.displayName + " (" + uf.username + ")";
+                TextUnformatted(name.c_str());
+            }
+            PopStyleColor();
         }
     }
     EndChild();

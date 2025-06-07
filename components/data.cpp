@@ -6,6 +6,7 @@
 #include <vector>
 #include <stdexcept>
 #include <filesystem>
+#include <unordered_map>
 #include <windows.h>
 #include <dpapi.h>
 
@@ -22,6 +23,8 @@ set<int> g_selectedAccountIds;
 
 vector<FavoriteGame> g_favorites;
 vector<FriendInfo> g_friends;
+unordered_map<int, vector<FriendInfo>> g_accountFriends;
+unordered_map<int, vector<FriendInfo>> g_unfriendedFriends;
 
 int g_defaultAccountId = -1;
 array<char, 128> s_jobIdBuffer = {};
@@ -250,5 +253,50 @@ namespace Data {
         out << j.dump(4);
         LOG_INFO("Saved defaultAccountId=" + std::to_string(g_defaultAccountId));
         LOG_INFO("Saved statusRefreshInterval=" + std::to_string(g_statusRefreshInterval));
+    }
+
+    void LoadFriends(const std::string &filename) {
+        std::ifstream fin{filename};
+        if (!fin.is_open()) {
+            LOG_INFO("No " + filename + ", starting with empty friend lists");
+            return;
+        }
+        try {
+            json j; fin >> j;
+            g_accountFriends.clear();
+            for (auto it = j.begin(); it != j.end(); ++it) {
+                int acctId = std::stoi(it.key());
+                std::vector<FriendInfo> friends;
+                for (auto &f : it.value()) {
+                    FriendInfo fi;
+                    fi.id = f.value("id", 0ULL);
+                    fi.username = f.value("username", "");
+                    fi.displayName = f.value("displayName", "");
+                    friends.push_back(std::move(fi));
+                }
+                g_accountFriends[acctId] = std::move(friends);
+            }
+            LOG_INFO("Loaded friend data for " + std::to_string(g_accountFriends.size()) + " accounts");
+        } catch (const std::exception &e) {
+            LOG_ERROR("Failed to parse " + filename + ": " + e.what());
+        }
+    }
+
+    void SaveFriends(const std::string &filename) {
+        json j;
+        for (const auto &[acctId, friends] : g_accountFriends) {
+            json arr = json::array();
+            for (const auto &f : friends) {
+                arr.push_back({{"id", f.id}, {"username", f.username}, {"displayName", f.displayName}});
+            }
+            j[std::to_string(acctId)] = std::move(arr);
+        }
+        std::ofstream out{filename};
+        if (!out.is_open()) {
+            LOG_ERROR("Could not open '" + filename + "' for writing");
+            return;
+        }
+        out << j.dump(4);
+        LOG_INFO("Saved friend data for " + std::to_string(g_accountFriends.size()) + " accounts");
     }
 }
