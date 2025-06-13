@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <imgui.h>
 #include <string>
+#include <system_error>
 #include <vector>
 #include <mutex>
 #include <atomic>
@@ -37,9 +38,22 @@ static once_flag g_start_log_watcher_once;
 static mutex g_logs_mtx;
 
 static void clearLogs() {
-    lock_guard<mutex> lk(g_logs_mtx);
-    g_logs.clear();
-    g_selected_log_idx = -1;
+    string dir = logsFolder();
+    if (!dir.empty() && fs::exists(dir)) {
+        for (const auto &entry : fs::directory_iterator(dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".log") {
+                error_code ec;
+                fs::remove(entry.path(), ec);
+                if (ec)
+                    LOG_WARN("Failed to delete log: " + entry.path().string());
+            }
+        }
+    }
+    {
+        lock_guard<mutex> lk(g_logs_mtx);
+        g_logs.clear();
+        g_selected_log_idx = -1;
+    }
 }
 
 static void refreshLogs() {
