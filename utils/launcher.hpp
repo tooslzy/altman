@@ -15,15 +15,15 @@ using namespace std;
 using namespace std::chrono;
 
 static string urlEncode(const string &s) {
-        ostringstream out;
-        out << hex << uppercase;
-        for (unsigned char c: s) {
-                if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-                        out << c;
-                else
-                        out << '%' << setw(2) << setfill('0') << static_cast<int>(c);
-        }
-        return out.str();
+	ostringstream out;
+	out << hex << uppercase;
+	for (unsigned char c: s) {
+		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
+			out << c;
+		else
+			out << '%' << setw(2) << setfill('0') << static_cast<int>(c);
+	}
+	return out.str();
 }
 
 inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &cookie) {
@@ -115,21 +115,22 @@ inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &c
 	LOG_INFO("Roblox process started successfully for place ID: " + to_string(placeId));
 	return executionInfo.hProcess;
 }
+
 inline void launchRobloxSequential(uint64_t placeId, const std::string &jobId,
-                                   const std::vector<std::pair<int, std::string>> &accounts) {
-    for (const auto &[accountId, cookie] : accounts) {
-        LOG_INFO("Launching Roblox for account ID: " + std::to_string(accountId) +
-                 " PlaceID: " + std::to_string(placeId) +
-                 (jobId.empty() ? "" : " JobID: " + jobId));
-        HANDLE proc = startRoblox(placeId, jobId, cookie);
-        if (proc) {
-            WaitForInputIdle(proc, INFINITE);
-            CloseHandle(proc);
-            LOG_INFO("Roblox launched successfully for account ID: " +
-                     std::to_string(accountId));
-        } else {
-            LOG_ERROR("Failed to start Roblox for account ID: " +
-                      std::to_string(accountId));
-        }
-    }
+                                   const std::vector<std::pair<int, std::string> > &accounts) {
+	for (const auto &[accountId, cookie]: accounts) {
+		LOG_INFO("Launching Roblox for account ID: " + std::to_string(accountId) +
+			" PlaceID: " + std::to_string(placeId) +
+			(jobId.empty() ? "" : " JobID: " + jobId));
+		HANDLE proc = startRoblox(placeId, jobId, cookie);
+		if (proc) {
+			WaitForInputIdle(proc, INFINITE);
+			CloseHandle(proc);
+			LOG_INFO("Roblox launched successfully for account ID: " +
+				std::to_string(accountId));
+		} else {
+			LOG_ERROR("Failed to start Roblox for account ID: " +
+				std::to_string(accountId));
+		}
+	}
 }

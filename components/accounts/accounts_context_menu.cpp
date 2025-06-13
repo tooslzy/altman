@@ -31,6 +31,10 @@ using Microsoft::WRL::ComPtr;
 static char g_edit_note_buffer_ctx[1024];
 static int g_editing_note_for_account_id_ctx = -1;
 
+static bool g_openCustomUrlPopup = false;
+static int g_customUrlAccountId = -1;
+static char g_customUrlBuffer[256] = "";
+
 using namespace ImGui;
 using namespace std;
 
@@ -116,19 +120,84 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
             LOG_INFO("Copied Note for account: " + account.displayName);
         }
 
+        if (account.status == "InGame") {
+            uint64_t placeId = 0;
+            string jobId;
+            try {
+                auto pres = RobloxApi::getPresences({stoull(account.userId)}, account.cookie);
+                auto itp = pres.find(stoull(account.userId));
+                if (itp != pres.end()) {
+                    placeId = itp->second.placeId;
+                    jobId = itp->second.gameId;
+                }
+            } catch (...) {
+            }
+
+            if (placeId && !jobId.empty()) {
+                if (MenuItem("Copy Place ID"))
+                    SetClipboardText(to_string(placeId).c_str());
+                if (MenuItem("Copy Job ID"))
+                    SetClipboardText(jobId.c_str());
+                if (BeginMenu("Copy Launch Method")) {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long) placeId,
+                             jobId.c_str());
+                    if (MenuItem("Deep Link")) SetClipboardText(buf);
+                    string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(placeId) + ", \"" + jobId + "\")";
+                    if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                    string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(placeId) +
+                                  ", \"" + jobId + "\")";
+                    if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                    ImGui::EndMenu();
+                }
+                if (MenuItem("Generate Invite Link")) {
+                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(placeId) +
+                                  "&gameInstanceId=" + jobId;
+                    SetClipboardText(link.c_str());
+                }
+                Separator();
+            }
+        }
+
         Separator();
 
-        if (MenuItem("Open In Browser")) {
-            if (!account.cookie.empty()) {
-                LOG_INFO(
-                    "Opening browser for account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
-                Threading::newThread([account]() {
-                    LaunchBrowserWithCookie(account);
-                });
-            } else {
-                LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
-                Status::Error("Cookie is empty for this account");
+        if (BeginMenu("Open In Browser")) {
+            if (MenuItem("Home Page")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/home", account.username + " - " + account.userId,
+                                  account.cookie);
             }
+            if (MenuItem("Profile")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/users/" + account.userId + "/profile", account.username,
+                                  account.cookie);
+            }
+            if (MenuItem("Avatar")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/my/avatar", account.username, account.cookie);
+            }
+            if (MenuItem("Friends")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/users/friends", account.username, account.cookie);
+            }
+            if (MenuItem("Messages")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/my/messages", account.username, account.cookie);
+            }
+            if (MenuItem("Catalog")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://www.roblox.com/catalog", account.username, account.cookie);
+            }
+            if (MenuItem("Creator Hub")) {
+                if (!account.cookie.empty())
+                    LaunchWebview("https://create.roblox.com/", account.username, account.cookie);
+            }
+            if (MenuItem("Custom URL")) {
+                g_openCustomUrlPopup = true;
+                g_customUrlAccountId = account.id;
+                g_customUrlBuffer[0] = '\0';
+            }
+            ImGui::EndMenu();
         }
 
         if (MenuItem("Copy Launch Link")) {
@@ -222,6 +291,28 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                 });
             }
             PopStyleColor();
+        }
+        EndPopup();
+    }
+
+    if (g_openCustomUrlPopup && g_customUrlAccountId == account.id) {
+        string popupId = "Custom URL##Acct" + to_string(account.id);
+        OpenPopup(popupId.c_str());
+        g_openCustomUrlPopup = false;
+    }
+    string popupName = "Custom URL##Acct" + to_string(account.id);
+    if (BeginPopupModal(popupName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        InputTextWithHint("##AcctUrl", "Enter URL", g_customUrlBuffer, sizeof(g_customUrlBuffer));
+        Spacing();
+        if (Button("Open") && g_customUrlBuffer[0] != '\0') {
+            LaunchWebview(g_customUrlBuffer, account.username + " - " + account.userId, account.cookie);
+            g_customUrlBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        SameLine();
+        if (Button("Cancel")) {
+            g_customUrlBuffer[0] = '\0';
+            CloseCurrentPopup();
         }
         EndPopup();
     }
