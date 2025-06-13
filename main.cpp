@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <thread>
 #include <chrono>
+#include <algorithm>
 
 #include <windows.h>
 
@@ -140,10 +141,11 @@ int WINAPI WinMain(
             char buf[512];
             snprintf(buf, sizeof(buf), "Invalid cookies for: %s. Remove them?", names.c_str());
             ConfirmPopup::Add(buf, [invalidIds]() {
+                erase_if(g_accounts, [&](const AccountData &a) {
+                    return std::find(invalidIds.begin(), invalidIds.end(), a.id) != invalidIds.end();
+                });
                 for (int id : invalidIds) {
-                    auto it = std::find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
-                    if (it != g_accounts.end())
-                        it->cookie.clear();
+                    g_selectedAccountIds.erase(id);
                 }
                 Data::SaveAccounts();
             });
