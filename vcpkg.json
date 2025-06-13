@@ -1,9 +1,8 @@
 {
-  "name": "altman",
-  "version-string": "0.1.0",
-  "dependencies": [
-    "cpr",
-    "nlohmann-json",
-    "webview2"
-  ]
+  "name" : "altman",
+  "version-string" : "0.1.0",
+  "dependencies" : [ "cpr", "nlohmann-json", "webview2", {
+    "name" : "ctre",
+    "version>=" : "3.10.0"
+  } ]
 }
