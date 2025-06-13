@@ -10,6 +10,7 @@
 #include <set>
 #include <unordered_map>
 
+#include "webview.hpp"
 #include "../../utils/roblox_api.h"
 #include "../components.h"
 #include "../../utils/time_utils.h"
@@ -117,7 +118,9 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 
             if (IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 if (!account.cookie.empty()) {
-                    LOG_INFO("Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id) + ")");
+                    LOG_INFO(
+                        "Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id) +
+                        ")");
                     Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
                 } else {
                     LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
@@ -193,10 +196,14 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
         InputTextWithHint("##WebviewUrl", "Enter URL", s_urlBuffer, sizeof(s_urlBuffer));
         Spacing();
         if (Button("Open") && s_urlBuffer[0] != '\0') {
-            auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == s_urlPopupAccountId; });
+            auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
+                return a.id == s_urlPopupAccountId;
+            });
             if (it != g_accounts.end()) {
                 string url = s_urlBuffer;
-                Threading::newThread([acc = *it, url]() { LaunchWebview(url, acc.username + " - " + acc.userId, acc.cookie); });
+                Threading::newThread([acc = *it, url]() {
+                    LaunchWebview(url, acc.username + " - " + acc.userId, acc.cookie);
+                });
             }
             s_urlBuffer[0] = '\0';
             CloseCurrentPopup();
