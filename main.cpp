@@ -20,6 +20,7 @@
 #include "utils/notifications.h"
 #include "utils/logging.hpp"
 #include "utils/confirm.h"
+#include "utils/main_thread.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>
@@ -124,7 +125,7 @@ int WINAPI WinMain(
     Data::LoadAccounts("accounts.json");
     Data::LoadFriends("friends.json");
 
-    {
+    auto refreshAccounts = [] {
         std::vector<int> invalidIds;
         std::string names;
         for (const auto &acct : g_accounts) {
@@ -137,57 +138,50 @@ int WINAPI WinMain(
                 names += acct.displayName.empty() ? acct.username : acct.displayName;
             }
         }
-        if (!invalidIds.empty()) {
-            char buf[512];
-            snprintf(buf, sizeof(buf), "Invalid cookies for: %s. Remove them?", names.c_str());
-            ConfirmPopup::Add(buf, [invalidIds]() {
-                erase_if(g_accounts, [&](const AccountData &a) {
-                    return std::find(invalidIds.begin(), invalidIds.end(), a.id) != invalidIds.end();
-                });
-                for (int id : invalidIds) {
-                    g_selectedAccountIds.erase(id);
+        for (auto &acct: g_accounts) {
+            if (!acct.userId.empty()) {
+                uint64_t uid = 0;
+                try {
+                    uid = std::stoull(acct.userId);
+                    acct.status = RobloxApi::getPresence(acct.cookie, uid);
+                    auto vs = RobloxApi::getVoiceChatStatus(acct.cookie);
+                    acct.voiceStatus = vs.status;
+                    acct.voiceBanExpiry = vs.bannedUntil;
+                } catch (const std::exception &e) {
+                    char errorMsg[256];
+                    snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(), e.what());
+                    LOG_ERROR(errorMsg);
+                    acct.status = "Error: Invalid UserID";
                 }
-                Data::SaveAccounts();
-            });
-        }
-    }
-
-    for (auto &acct: g_accounts) {
-        if (!acct.userId.empty()) {
-            uint64_t uid = 0;
-            try {
-                uid = std::stoull(acct.userId);
-                acct.status = RobloxApi::getPresence(acct.cookie, uid);
-            } catch (const std::exception &e) {
-                char errorMsg[256];
-                snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(), e.what());
-                LOG_ERROR(errorMsg);
-                acct.status = "Error: Invalid UserID";
             }
         }
-    }
+        Data::SaveAccounts();
+        LOG_INFO("Loaded accounts and refreshed statuses");
 
-    Data::SaveAccounts();
-    LOG_INFO("Loaded accounts and refreshed statuses");
+        if (!invalidIds.empty()) {
+            std::string namesCopy = names;
+            MainThread::Post([invalidIds, namesCopy]() {
+                char buf[512];
+                snprintf(buf, sizeof(buf), "Invalid cookies for: %s. Remove them?", namesCopy.c_str());
+                ConfirmPopup::Add(buf, [invalidIds]() {
+                    erase_if(g_accounts, [&](const AccountData &a) {
+                        return std::find(invalidIds.begin(), invalidIds.end(), a.id) != invalidIds.end();
+                    });
+                    for (int id : invalidIds) {
+                        g_selectedAccountIds.erase(id);
+                    }
+                    Data::SaveAccounts();
+                });
+            });
+        }
+    };
 
-    Threading::newThread([] {
+    Threading::newThread([refreshAccounts] {
+        refreshAccounts();
         while (true) {
             std::this_thread::sleep_for(std::chrono::minutes(g_statusRefreshInterval));
             LOG_INFO("Refreshing account statuses...");
-            for (auto &acct: g_accounts) {
-                if (!acct.userId.empty()) {
-                    try {
-                        uint64_t uid = std::stoull(acct.userId);
-                        acct.status = RobloxApi::getPresence(acct.cookie, uid);
-                        auto vs = RobloxApi::getVoiceChatStatus(acct.cookie);
-                        acct.voiceStatus = vs.status;
-                        acct.voiceBanExpiry = vs.bannedUntil;
-                    } catch (const std::exception &e) {
-                        LOG_ERROR(std::string("Error refreshing account ") + acct.userId + ": " + e.what());
-                    }
-                }
-            }
-            Data::SaveAccounts();
+            refreshAccounts();
             LOG_INFO("Refreshed account statuses");
         }
     });
@@ -261,6 +255,8 @@ int WINAPI WinMain(
         }
         if (done)
             break;
+
+        MainThread::Process();
 
         if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED) {
             Sleep(10);
