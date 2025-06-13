@@ -242,7 +242,7 @@ void RenderFriendsTab() {
 						if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
 						ImGui::EndMenu();
 					}
-					if (MenuItem("Generate Invite Link")) {
+					if (MenuItem("Generate Browser Link")) {
 						string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
 						              "&gameInstanceId=" + f.gameId;
 						SetClipboardText(link.c_str());
