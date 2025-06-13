@@ -140,16 +140,19 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                     SetClipboardText(jobId.c_str());
                 if (BeginMenu("Copy Launch Method")) {
                     char buf[256];
-                    snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long)placeId, jobId.c_str());
+                    snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long) placeId,
+                             jobId.c_str());
                     if (MenuItem("Deep Link")) SetClipboardText(buf);
                     string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(placeId) + ", \"" + jobId + "\")";
                     if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
-                    string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(placeId) + ", \"" + jobId + "\")";
+                    string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(placeId) +
+                                  ", \"" + jobId + "\")";
                     if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
-                    EndMenu();
+                    ImGui::EndMenu();
                 }
                 if (MenuItem("Generate Invite Link")) {
-                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(placeId) + "&gameInstanceId=" + jobId;
+                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(placeId) +
+                                  "&gameInstanceId=" + jobId;
                     SetClipboardText(link.c_str());
                 }
                 Separator();
@@ -161,11 +164,13 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
         if (BeginMenu("Open In Browser")) {
             if (MenuItem("Home Page")) {
                 if (!account.cookie.empty())
-                    LaunchWebview("https://www.roblox.com/home", account.username + " - " + account.userId, account.cookie);
+                    LaunchWebview("https://www.roblox.com/home", account.username + " - " + account.userId,
+                                  account.cookie);
             }
             if (MenuItem("Profile")) {
                 if (!account.cookie.empty())
-                    LaunchWebview("https://www.roblox.com/users/" + account.userId + "/profile", account.username, account.cookie);
+                    LaunchWebview("https://www.roblox.com/users/" + account.userId + "/profile", account.username,
+                                  account.cookie);
             }
             if (MenuItem("Avatar")) {
                 if (!account.cookie.empty())
@@ -192,7 +197,7 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                 g_customUrlAccountId = account.id;
                 g_customUrlBuffer[0] = '\0';
             }
-            EndMenu();
+            ImGui::EndMenu();
         }
 
         if (MenuItem("Copy Launch Link")) {

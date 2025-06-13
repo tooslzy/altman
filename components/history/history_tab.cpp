@@ -41,7 +41,7 @@ static mutex g_logs_mtx;
 static void clearLogs() {
     string dir = logsFolder();
     if (!dir.empty() && fs::exists(dir)) {
-        for (const auto &entry : fs::directory_iterator(dir)) {
+        for (const auto &entry: fs::directory_iterator(dir)) {
             if (entry.is_regular_file() && entry.path().extension() == ".log") {
                 error_code ec;
                 fs::remove(entry.path(), ec);
@@ -49,8 +49,7 @@ static void clearLogs() {
                     LOG_WARN("Failed to delete log: " + entry.path().string());
             }
         }
-    }
-    {
+    } {
         lock_guard<mutex> lk(g_logs_mtx);
         g_logs.clear();
         g_selected_log_idx = -1;
@@ -279,16 +278,20 @@ void RenderHistoryTab() {
                     }
                     if (BeginMenu("Copy Launch Method")) {
                         char buf[256];
-                        snprintf(buf, sizeof(buf), "roblox://placeId=%s&gameInstanceId=%s", logInfo.placeId.c_str(), logInfo.jobId.c_str());
+                        snprintf(buf, sizeof(buf), "roblox://placeId=%s&gameInstanceId=%s", logInfo.placeId.c_str(),
+                                 logInfo.jobId.c_str());
                         if (MenuItem("Deep Link")) SetClipboardText(buf);
-                        string js = "Roblox.GameLauncher.joinGameInstance(" + logInfo.placeId + ", \"" + logInfo.jobId + "\")";
+                        string js = "Roblox.GameLauncher.joinGameInstance(" + logInfo.placeId + ", \"" + logInfo.jobId +
+                                    "\")";
                         if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
-                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId + ", \"" + logInfo.jobId + "\")";
+                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId
+                                      + ", \"" + logInfo.jobId + "\")";
                         if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
-                        EndMenu();
+                        ImGui::EndMenu();
                     }
                     if (MenuItem("Generate Invite Link")) {
-                        string link = "https://www.roblox.com/games/start?placeId=" + logInfo.placeId + "&gameInstanceId=" + logInfo.jobId;
+                        string link = "https://www.roblox.com/games/start?placeId=" + logInfo.placeId +
+                                      "&gameInstanceId=" + logInfo.jobId;
                         SetClipboardText(link.c_str());
                     }
                     Separator();
@@ -327,19 +330,19 @@ void RenderHistoryTab() {
                     }
 
                     if (place_id_val > 0) {
-                        vector<pair<int, string>> accounts;
-                        for (int id : g_selectedAccountIds) {
+                        vector<pair<int, string> > accounts;
+                        for (int id: g_selectedAccountIds) {
                             auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                                             [&](const AccountData &a) { return a.id == id; });
+                                              [&](const AccountData &a) { return a.id == id; });
                             if (it != g_accounts.end())
                                 accounts.emplace_back(it->id, it->cookie);
                         }
                         if (!accounts.empty()) {
                             LOG_INFO("Launching game from history...");
                             thread([place_id_val, jobId = logInfo.jobId, accounts]() {
-                                      launchRobloxSequential(place_id_val, jobId, accounts);
-                                  })
-                                .detach();
+                                        launchRobloxSequential(place_id_val, jobId, accounts);
+                                    })
+                                    .detach();
                         } else {
                             LOG_INFO("Selected account not found.");
                         }

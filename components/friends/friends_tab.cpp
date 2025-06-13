@@ -209,9 +209,11 @@ void RenderFriendsTab() {
                 Separator();
                 if (f.presence == "InGame" && f.placeId && !f.gameId.empty()) {
                     if (MenuItem("Join")) {
-                        vector<pair<int, string>> accounts;
-                        for (int id : g_selectedAccountIds) {
-                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+                        vector<pair<int, string> > accounts;
+                        for (int id: g_selectedAccountIds) {
+                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
+                                return a.id == id;
+                            });
                             if (itA != g_accounts.end())
                                 accounts.emplace_back(itA->id, itA->cookie);
                         }
@@ -229,16 +231,20 @@ void RenderFriendsTab() {
                     }
                     if (BeginMenu("Copy Launch Method")) {
                         char buf[256];
-                        snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long)f.placeId, f.gameId.c_str());
+                        snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
+                                 (unsigned long long) f.placeId, f.gameId.c_str());
                         if (MenuItem("Deep Link")) SetClipboardText(buf);
-                        string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId + "\")";
+                        string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId +
+                                    "\")";
                         if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
-                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(f.placeId) + ", \"" + f.gameId + "\")";
+                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" +
+                                      to_string(f.placeId) + ", \"" + f.gameId + "\")";
                         if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
-                        EndMenu();
+                        ImGui::EndMenu();
                     }
                     if (MenuItem("Generate Invite Link")) {
-                        string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) + "&gameInstanceId=" + f.gameId;
+                        string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
+                                      "&gameInstanceId=" + f.gameId;
                         SetClipboardText(link.c_str());
                     }
                 }
@@ -257,7 +263,8 @@ void RenderFriendsTab() {
                             bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
                             if (ok) {
                                 erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
+                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size())
+                                    &&
                                     g_friends[g_selectedFriendIdx].id == friendId) {
                                     g_selectedFriendIdx = -1;
                                     g_selectedFriend = {};
@@ -267,8 +274,8 @@ void RenderFriendsTab() {
                                 });
                                 auto &unfList = g_unfriendedFriends[acctIdCopy];
                                 if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
-                                        return fi.id == friendId;
-                                    }))
+                                    return fi.id == friendId;
+                                }))
                                     unfList.push_back(fCopy);
                                 Data::SaveFriends();
                             } else {
