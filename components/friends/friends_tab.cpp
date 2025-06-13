@@ -15,6 +15,7 @@
 #include "./friends_actions.h"
 #include "../utils/webview.hpp"
 #include "../games/games_utils.h"
+#include "../../utils/confirm.h"
 
 using namespace ImGui;
 using namespace std;
@@ -195,7 +196,26 @@ void RenderFriendsTab() {
             }
 
             if (BeginPopupContextItem("FriendRowContextMenu")) {
+                if (MenuItem("Copy Display Name")) {
+                    SetClipboardText(f.displayName.c_str());
+                }
+                if (MenuItem("Copy Username")) {
+                    SetClipboardText(f.username.c_str());
+                }
+                if (MenuItem("Copy User ID")) {
+                    string idStr = to_string(f.id);
+                    SetClipboardText(idStr.c_str());
+                }
+                Separator();
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
                 if (MenuItem("Unfriend")) {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
+                    if (!ConfirmAction(buf)) {
+                        PopStyleColor();
+                        EndPopup();
+                        goto skip_unfriend;
+                    }
                     FriendInfo fCopy = f;
                     uint64_t friendId = fCopy.id;
                     string cookieCopy = acct.cookie;
@@ -223,6 +243,42 @@ void RenderFriendsTab() {
                             cerr << "Unfriend failed: " << resp << "\n";
                         }
                     });
+                }
+skip_unfriend:
+                PopStyleColor();
+                if (MenuItem("Follow")) {
+                    Threading::newThread([id = f.id, cookie = acct.cookie]() {
+                        RobloxApi::followUser(to_string(id), cookie);
+                    });
+                }
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
+                if (MenuItem("Blocked")) {
+                    Threading::newThread([id = f.id, cookie = acct.cookie]() {
+                        RobloxApi::blockUser(to_string(id), cookie);
+                    });
+                }
+                PopStyleColor();
+                if (f.presence == "InGame" && f.placeId && !f.gameId.empty()) {
+                    Separator();
+                    if (MenuItem("Join")) {
+                        vector<pair<int, string>> accounts;
+                        for (int id : g_selectedAccountIds) {
+                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+                            if (itA != g_accounts.end())
+                                accounts.emplace_back(itA->id, itA->cookie);
+                        }
+                        if (!accounts.empty()) {
+                            Threading::newThread([row = f, accounts]() {
+                                launchRobloxSequential(row.placeId, row.gameId, accounts);
+                            });
+                        }
+                    }
+                    if (MenuItem("Copy Place ID")) {
+                        SetClipboardText(to_string(f.placeId).c_str());
+                    }
+                    if (MenuItem("Copy Job ID")) {
+                        SetClipboardText(f.gameId.c_str());
+                    }
                 }
                 EndPopup();
             }

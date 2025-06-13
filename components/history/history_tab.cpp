@@ -22,6 +22,7 @@
 #include "../../utils/launcher.hpp"
 #include "../../utils/modal_popup.h"
 #include "../../utils/status.h"
+#include "../../utils/confirm.h"
 #include "../../ui.h"
 #include "../data.h"
 
@@ -221,9 +222,15 @@ void RenderHistoryTab() {
         refreshLogs();
     }
     SameLine();
+    ImVec4 redBtn(1.f, 0.2f, 0.2f, 1.f);
+    PushStyleColor(ImGuiCol_Button, redBtn);
+    PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.f, 0.3f, 0.3f, 1.f));
+    PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.f, 0.4f, 0.4f, 1.f));
     if (Button("Clear Logs")) {
-        clearLogs();
+        if (ConfirmAction("Clear all logs?"))
+            clearLogs();
     }
+    PopStyleColor(3);
     SameLine();
     if (g_logs_loading.load()) {
         TextUnformatted("Loading...");

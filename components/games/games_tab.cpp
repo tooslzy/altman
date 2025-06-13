@@ -67,6 +67,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
             }
 
             if (BeginPopupContextItem("FavoriteContext")) {
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
                 if (MenuItem("Unfavorite")) {
                     uint64_t universeIdToRemove = game.universeId;
                     favoriteGameIds.erase(universeIdToRemove);
@@ -85,6 +86,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     Data::SaveFavorites();
                     CloseCurrentPopup();
                 }
+                PopStyleColor();
 
                 if (BeginMenu("Rename")) {
                     if (renamingUniverseId != game.universeId) {

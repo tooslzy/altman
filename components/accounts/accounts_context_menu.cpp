@@ -19,6 +19,7 @@
 #include "../../utils/threading.h"
 #include "../../utils/logging.hpp"
 #include "../../utils/status.h"
+#include "../../utils/confirm.h"
 #include "../../ui.h"
 #include "../data.h"
 
@@ -182,37 +183,47 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
 
         Separator();
 
+        PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
         if (MenuItem("Delete This Account")) {
-            LOG_INFO("Attempting to delete account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
-            erase_if(
-                g_accounts,
-                [&](const AccountData &acc_data) {
-                    return acc_data.id == account.id;
-                });
-            g_selectedAccountIds.erase(account.id);
-            Status::Set("Deleted account " + account.displayName);
-            Data::SaveAccounts();
-            LOG_INFO("Successfully deleted account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
-            CloseCurrentPopup();
+            char buf[256];
+            snprintf(buf, sizeof(buf), "Delete %s?", account.displayName.c_str());
+            if (ConfirmAction(buf)) {
+                LOG_INFO("Attempting to delete account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
+                erase_if(
+                    g_accounts,
+                    [&](const AccountData &acc_data) {
+                        return acc_data.id == account.id;
+                    });
+                g_selectedAccountIds.erase(account.id);
+                Status::Set("Deleted account " + account.displayName);
+                Data::SaveAccounts();
+                LOG_INFO("Successfully deleted account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
+                CloseCurrentPopup();
+            }
         }
+        PopStyleColor();
 
         if (!g_selectedAccountIds.empty() && g_selectedAccountIds.size() > 1 && g_selectedAccountIds.
             contains(account.id)) {
             char buf[64];
             snprintf(buf, sizeof(buf), "Delete %zu Selected Account(s)", g_selectedAccountIds.size());
+            PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
             if (MenuItem(buf)) {
-                LOG_INFO("Attempting to delete " + to_string(g_selectedAccountIds.size()) + " selected accounts.");
-                erase_if(
-                    g_accounts,
-                    [&](const AccountData &acc_data) {
-                        return g_selectedAccountIds.contains(acc_data.id);
-                    });
-                g_selectedAccountIds.clear();
-                Data::SaveAccounts();
-                Status::Set("Deleted selected accounts");
-                LOG_INFO("Successfully deleted selected accounts.");
-                CloseCurrentPopup();
+                if (ConfirmAction("Delete selected accounts?")) {
+                    LOG_INFO("Attempting to delete " + to_string(g_selectedAccountIds.size()) + " selected accounts.");
+                    erase_if(
+                        g_accounts,
+                        [&](const AccountData &acc_data) {
+                            return g_selectedAccountIds.contains(acc_data.id);
+                        });
+                    g_selectedAccountIds.clear();
+                    Data::SaveAccounts();
+                    Status::Set("Deleted selected accounts");
+                    LOG_INFO("Successfully deleted selected accounts.");
+                    CloseCurrentPopup();
+                }
             }
+            PopStyleColor();
         }
         EndPopup();
     }

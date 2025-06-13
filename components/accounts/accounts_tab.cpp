@@ -172,7 +172,15 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             TableNextColumn();
             float voice_y = GetCursorPosY();
             SetCursorPosY(voice_y + vertical_padding);
-            TextUnformatted(account.voiceStatus.c_str());
+            ImVec4 voiceCol = ImVec4(1.f, 1.f, 1.f, 1.f);
+            if (account.voiceStatus == "Enabled")
+                voiceCol = ImVec4(0.4f, 1.f, 0.4f, 1.f);
+            else if (account.voiceStatus == "Disabled")
+                voiceCol = ImVec4(1.f, 1.f, 0.3f, 1.f);
+            else if (account.voiceStatus == "Banned")
+                voiceCol = ImVec4(1.f, 0.4f, 0.4f, 1.f);
+
+            TextColored(voiceCol, "%s", account.voiceStatus.c_str());
             if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0 && IsItemHovered()) {
                 BeginTooltip();
                 string timeStr = formatRelativeFuture(account.voiceBanExpiry);

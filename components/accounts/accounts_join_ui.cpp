@@ -16,9 +16,33 @@
 #include "../../utils/status.h"
 #include "../../utils/logging.hpp"
 #include "../../utils/modal_popup.h"
+#include "../../utils/confirm.h"
+#include "../../utils/app_state.h"
 
 #ifdef _WIN32
 #include <windows.h>
+#include <tlhelp32.h>
+#endif
+
+#ifdef _WIN32
+static bool isRobloxRunning() {
+    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snap == INVALID_HANDLE_VALUE)
+        return false;
+    PROCESSENTRY32 pe{};
+    pe.dwSize = sizeof(pe);
+    bool running = false;
+    if (Process32First(snap, &pe)) {
+        do {
+            if (_stricmp(pe.szExeFile, "RobloxPlayerBeta.exe") == 0) {
+                running = true;
+                break;
+            }
+        } while (Process32Next(snap, &pe));
+    }
+    CloseHandle(snap);
+    return running;
+}
 #endif
 
 using namespace ImGui;
@@ -60,6 +84,12 @@ void RenderJoinOptions() {
 
     Separator();
     if (Button(" \xEF\x8B\xB6  Join ")) {
+#ifdef _WIN32
+        if (!g_multiRobloxEnabled && isRobloxRunning()) {
+            if (!ConfirmAction("Roblox is already running. Launch anyway?"))
+                return;
+        }
+#endif
         if (g_selectedAccountIds.empty()) {
             ModalPopup::Add("Select an account first.");
             return;
