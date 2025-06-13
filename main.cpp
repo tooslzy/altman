@@ -19,6 +19,7 @@
 #include "utils/roblox_api.h"
 #include "utils/notifications.h"
 #include "utils/logging.hpp"
+#include "utils/confirm.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>
@@ -121,6 +122,33 @@ int WINAPI WinMain(
     Data::LoadSettings("settings.json");
     Data::LoadAccounts("accounts.json");
     Data::LoadFriends("friends.json");
+
+    {
+        std::vector<int> invalidIds;
+        std::string names;
+        for (const auto &acct : g_accounts) {
+            if (acct.cookie.empty())
+                continue;
+            if (!RobloxApi::isCookieValid(acct.cookie)) {
+                invalidIds.push_back(acct.id);
+                if (!names.empty())
+                    names += ", ";
+                names += acct.displayName.empty() ? acct.username : acct.displayName;
+            }
+        }
+        if (!invalidIds.empty()) {
+            char buf[512];
+            snprintf(buf, sizeof(buf), "Invalid cookies for: %s. Remove them?", names.c_str());
+            ConfirmPopup::Add(buf, [invalidIds]() {
+                for (int id : invalidIds) {
+                    auto it = std::find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+                    if (it != g_accounts.end())
+                        it->cookie.clear();
+                }
+                Data::SaveAccounts();
+            });
+        }
+    }
 
     for (auto &acct: g_accounts) {
         if (!acct.userId.empty()) {
