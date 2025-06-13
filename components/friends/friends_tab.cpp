@@ -227,6 +227,20 @@ void RenderFriendsTab() {
                     if (MenuItem("Copy Job ID")) {
                         SetClipboardText(f.gameId.c_str());
                     }
+                    if (BeginMenu("Copy Launch Method")) {
+                        char buf[256];
+                        snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long)f.placeId, f.gameId.c_str());
+                        if (MenuItem("Deep Link")) SetClipboardText(buf);
+                        string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId + "\")";
+                        if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(f.placeId) + ", \"" + f.gameId + "\")";
+                        if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                        EndMenu();
+                    }
+                    if (MenuItem("Generate Invite Link")) {
+                        string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) + "&gameInstanceId=" + f.gameId;
+                        SetClipboardText(link.c_str());
+                    }
                 }
                 Separator();
                 PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));

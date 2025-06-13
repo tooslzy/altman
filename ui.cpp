@@ -86,8 +86,27 @@ bool RenderUI() {
         PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
         PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-        if (Begin("StatusBar", nullptr, flags))
-            Text("Status: %s", Status::Get().c_str());
+        if (Begin("StatusBar", nullptr, flags)) {
+            string selectedNames;
+            bool first = true;
+            for (int id : g_selectedAccountIds) {
+                auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+                if (it == g_accounts.end())
+                    continue;
+                if (!first)
+                    selectedNames += ", ";
+                string name = it->displayName.empty() ? it->username : it->displayName;
+                if (first && id == g_defaultAccountId)
+                    name += "*";
+                selectedNames += name;
+                first = false;
+            }
+
+            if (selectedNames.empty())
+                Text("Status: %s", Status::Get().c_str());
+            else
+                Text("Selected: %s | Status: %s", selectedNames.c_str(), Status::Get().c_str());
+        }
         End();
         PopStyleVar(2);
     }

@@ -220,6 +220,23 @@ void RenderServersTab() {
                 if (MenuItem("Copy Job ID")) {
                     SetClipboardText(srv.jobId.c_str());
                 }
+                if (MenuItem("Copy Place ID")) {
+                    SetClipboardText(to_string(g_current_placeId_servers).c_str());
+                }
+                if (BeginMenu("Copy Launch Method")) {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long)g_current_placeId_servers, srv.jobId.c_str());
+                    if (MenuItem("Deep Link")) SetClipboardText(buf);
+                    string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(g_current_placeId_servers) + ", \"" + srv.jobId + "\")";
+                    if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                    string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + to_string(g_current_placeId_servers) + ", \"" + srv.jobId + "\")";
+                    if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                    EndMenu();
+                }
+                if (MenuItem("Generate Invite Link")) {
+                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(g_current_placeId_servers) + "&gameInstanceId=" + srv.jobId;
+                    SetClipboardText(link.c_str());
+                }
                 Separator();
                 if (MenuItem("Join Server")) {
                     if (!g_selectedAccountIds.empty()) {
