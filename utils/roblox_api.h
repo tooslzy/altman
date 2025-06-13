@@ -624,4 +624,76 @@ namespace RobloxApi {
 
         return true;
     }
+
+    inline bool followUser(const string &targetUserId, const string &cookie, string *outResponse = nullptr) {
+        string url = "https://friends.roblox.com/v1/users/" + targetUserId + "/follow";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            return false;
+        }
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            }
+        );
+
+        if (outResponse) *outResponse = resp.text;
+        return resp.status_code == 200;
+    }
+
+    inline bool unfollowUser(const string &targetUserId, const string &cookie, string *outResponse = nullptr) {
+        string url = "https://friends.roblox.com/v1/users/" + targetUserId + "/unfollow";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            return false;
+        }
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            }
+        );
+
+        if (outResponse) *outResponse = resp.text;
+        return resp.status_code == 200;
+    }
+
+    inline bool blockUser(const string &targetUserId, const string &cookie, string *outResponse = nullptr) {
+        string url = "https://www.roblox.com/users/" + targetUserId + "/block";
+
+        auto csrfResp = HttpClient::post(url, {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+        auto it = csrfResp.headers.find("x-csrf-token");
+        if (it == csrfResp.headers.end()) {
+            if (outResponse) *outResponse = "Missing CSRF token";
+            return false;
+        }
+
+        auto resp = HttpClient::post(
+            url,
+            {
+                {"Cookie", ".ROBLOSECURITY=" + cookie},
+                {"Origin", "https://www.roblox.com"},
+                {"Referer", "https://www.roblox.com/"},
+                {"X-CSRF-TOKEN", it->second}
+            }
+        );
+
+        if (outResponse) *outResponse = resp.text;
+        return resp.status_code == 200;
+    }
 }

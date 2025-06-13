@@ -12,6 +12,7 @@
 #include "utils/roblox_api.h"
 #include "utils/status.h"
 #include "utils/modal_popup.h"
+#include "utils/confirm.h"
 
 using namespace ImGui;
 
@@ -94,6 +95,7 @@ bool RenderUI() {
     End();
 
     ModalPopup::Render();
+    ConfirmPopup::Render();
 
     return exit_from_menu || exit_from_content;
 }

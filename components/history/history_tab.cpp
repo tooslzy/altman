@@ -22,6 +22,7 @@
 #include "../../utils/launcher.hpp"
 #include "../../utils/modal_popup.h"
 #include "../../utils/status.h"
+#include "../../utils/confirm.h"
 #include "../../ui.h"
 #include "../data.h"
 
@@ -222,7 +223,7 @@ void RenderHistoryTab() {
     }
     SameLine();
     if (Button("Clear Logs")) {
-        clearLogs();
+        ConfirmPopup::Add("Clear all logs?", []() { clearLogs(); });
     }
     SameLine();
     if (g_logs_loading.load()) {

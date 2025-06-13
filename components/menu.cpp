@@ -8,13 +8,15 @@
 
 #include "../utils/roblox_api.h"
 #include "../utils/threading.h"
+#include "../utils/confirm.h"
+#include "../utils/app_state.h"
 #include "components.h"
 #include "data.h"
 
 using namespace ImGui;
 using namespace std;
 
-static bool g_multiRobloxEnabled = false;
+bool g_multiRobloxEnabled = false;
 static HANDLE g_hMutex = nullptr;
 
 static void EnableMultiInstance() {
@@ -178,16 +180,20 @@ bool RenderMainMenu() {
                 Separator();
                 char buf[64];
                 snprintf(buf, sizeof(buf), "Delete %zu Selected", g_selectedAccountIds.size());
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
                 if (MenuItem(buf)) {
-                    erase_if(
-                        g_accounts,
-                        [&](const AccountData &acct) {
-                            return g_selectedAccountIds.count(acct.id);
-                        });
-                    g_selectedAccountIds.clear();
-                    Data::SaveAccounts();
-                    LOG_INFO("Deleted selected accounts.");
+                    ConfirmPopup::Add("Delete selected accounts?", []() {
+                        erase_if(
+                            g_accounts,
+                            [&](const AccountData &acct) {
+                                return g_selectedAccountIds.count(acct.id);
+                            });
+                        g_selectedAccountIds.clear();
+                        Data::SaveAccounts();
+                        LOG_INFO("Deleted selected accounts.");
+                    });
                 }
+                PopStyleColor();
             }
             ImGui::EndMenu();
         }

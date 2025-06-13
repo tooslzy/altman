@@ -15,6 +15,7 @@
 #include "./friends_actions.h"
 #include "../utils/webview.hpp"
 #include "../games/games_utils.h"
+#include "../../utils/confirm.h"
 
 using namespace ImGui;
 using namespace std;
@@ -195,35 +196,74 @@ void RenderFriendsTab() {
             }
 
             if (BeginPopupContextItem("FriendRowContextMenu")) {
+                if (MenuItem("Copy Display Name")) {
+                    SetClipboardText(f.displayName.c_str());
+                }
+                if (MenuItem("Copy Username")) {
+                    SetClipboardText(f.username.c_str());
+                }
+                if (MenuItem("Copy User ID")) {
+                    string idStr = to_string(f.id);
+                    SetClipboardText(idStr.c_str());
+                }
+                Separator();
+                if (f.presence == "InGame" && f.placeId && !f.gameId.empty()) {
+                    if (MenuItem("Join")) {
+                        vector<pair<int, string>> accounts;
+                        for (int id : g_selectedAccountIds) {
+                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+                            if (itA != g_accounts.end())
+                                accounts.emplace_back(itA->id, itA->cookie);
+                        }
+                        if (!accounts.empty()) {
+                            Threading::newThread([row = f, accounts]() {
+                                launchRobloxSequential(row.placeId, row.gameId, accounts);
+                            });
+                        }
+                    }
+                    if (MenuItem("Copy Place ID")) {
+                        SetClipboardText(to_string(f.placeId).c_str());
+                    }
+                    if (MenuItem("Copy Job ID")) {
+                        SetClipboardText(f.gameId.c_str());
+                    }
+                }
+                Separator();
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
                 if (MenuItem("Unfriend")) {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
                     FriendInfo fCopy = f;
                     uint64_t friendId = fCopy.id;
                     string cookieCopy = acct.cookie;
                     int acctIdCopy = acct.id;
-                    Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
-                        string resp;
-                        bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
-                        if (ok) {
-                            erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-                            if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
-                                g_friends[g_selectedFriendIdx].id == friendId) {
-                                g_selectedFriendIdx = -1;
-                                g_selectedFriend = {};
+                    ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
+                        Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
+                            string resp;
+                            bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
+                            if (ok) {
+                                erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
+                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
+                                    g_friends[g_selectedFriendIdx].id == friendId) {
+                                    g_selectedFriendIdx = -1;
+                                    g_selectedFriend = {};
+                                }
+                                erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
+                                    return fi.id == friendId;
+                                });
+                                auto &unfList = g_unfriendedFriends[acctIdCopy];
+                                if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
+                                        return fi.id == friendId;
+                                    }))
+                                    unfList.push_back(fCopy);
+                                Data::SaveFriends();
+                            } else {
+                                cerr << "Unfriend failed: " << resp << "\n";
                             }
-                            erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
-                                return fi.id == friendId;
-                            });
-                            auto &unfList = g_unfriendedFriends[acctIdCopy];
-                            if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
-                                return fi.id == friendId;
-                            }))
-                                unfList.push_back(fCopy);
-                            Data::SaveFriends();
-                        } else {
-                            cerr << "Unfriend failed: " << resp << "\n";
-                        }
+                        });
                     });
                 }
+                PopStyleColor();
                 EndPopup();
             }
 
