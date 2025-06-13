@@ -89,8 +89,9 @@ bool RenderUI() {
         if (Begin("StatusBar", nullptr, flags)) {
             string selectedNames;
             bool first = true;
-            for (int id : g_selectedAccountIds) {
-                auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == id; });
+            for (int id: g_selectedAccountIds) {
+                auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                  [&](const AccountData &a) { return a.id == id; });
                 if (it == g_accounts.end())
                     continue;
                 if (!first)
