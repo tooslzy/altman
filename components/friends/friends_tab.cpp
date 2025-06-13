@@ -85,7 +85,8 @@ void RenderFriendsTab() {
         g_lastAcctIdForFriends = currentAcctId;
 
         if (!acct.userId.empty()) {
-            Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie, ref(g_friends),
+            Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie,
+                                 ref(g_friends),
                                  ref(g_friendsLoading));
         }
     }
@@ -204,13 +205,18 @@ void RenderFriendsTab() {
                         bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
                         if (ok) {
                             erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-                            if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) && g_friends[g_selectedFriendIdx].id == friendId) {
+                            if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
+                                g_friends[g_selectedFriendIdx].id == friendId) {
                                 g_selectedFriendIdx = -1;
                                 g_selectedFriend = {};
                             }
-                            erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) { return fi.id == friendId; });
+                            erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
+                                return fi.id == friendId;
+                            });
                             auto &unfList = g_unfriendedFriends[acctIdCopy];
-                            if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi){ return fi.id == friendId; }))
+                            if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
+                                return fi.id == friendId;
+                            }))
                                 unfList.push_back(fCopy);
                             Data::SaveFriends();
                         } else {
@@ -238,10 +244,11 @@ void RenderFriendsTab() {
         if (!g_unfriended.empty()) {
             Separator();
             PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-            TextUnformatted("Unfriended:");
-            for (const auto &uf : g_unfriended) {
-                string name = uf.displayName.empty() || uf.displayName == uf.username ?
-                               uf.username : uf.displayName + " (" + uf.username + ")";
+            TextUnformatted("Friends Lost:");
+            for (const auto &uf: g_unfriended) {
+                string name = uf.displayName.empty() || uf.displayName == uf.username
+                                  ? uf.username
+                                  : uf.displayName + " (" + uf.username + ")";
                 TextUnformatted(name.c_str());
             }
             PopStyleColor();
@@ -385,8 +392,8 @@ void RenderFriendsTab() {
             bool canJoin = (row.presence == "InGame" && row.placeId && !row.gameId.empty());
             BeginDisabled(!canJoin);
             if (Button((string(ICON_JOIN) + " Join Game").c_str()) && canJoin) {
-                vector<pair<int, string>> accounts;
-                for (int id : g_selectedAccountIds) {
+                vector<pair<int, string> > accounts;
+                for (int id: g_selectedAccountIds) {
                     auto it = find_if(g_accounts.begin(), g_accounts.end(),
                                       [&](const AccountData &a) { return a.id == id; });
                     if (it != g_accounts.end())
