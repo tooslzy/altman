@@ -211,37 +211,34 @@ void RenderFriendsTab() {
                 if (MenuItem("Unfriend")) {
                     char buf[256];
                     snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
-                    if (!ConfirmAction(buf)) {
-                        PopStyleColor();
-                        EndPopup();
-                        goto skip_unfriend;
-                    }
                     FriendInfo fCopy = f;
                     uint64_t friendId = fCopy.id;
                     string cookieCopy = acct.cookie;
                     int acctIdCopy = acct.id;
-                    Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
-                        string resp;
-                        bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
-                        if (ok) {
-                            erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-                            if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
-                                g_friends[g_selectedFriendIdx].id == friendId) {
-                                g_selectedFriendIdx = -1;
-                                g_selectedFriend = {};
+                    ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
+                        Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
+                            string resp;
+                            bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
+                            if (ok) {
+                                erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
+                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size()) &&
+                                    g_friends[g_selectedFriendIdx].id == friendId) {
+                                    g_selectedFriendIdx = -1;
+                                    g_selectedFriend = {};
+                                }
+                                erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
+                                    return fi.id == friendId;
+                                });
+                                auto &unfList = g_unfriendedFriends[acctIdCopy];
+                                if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
+                                        return fi.id == friendId;
+                                    }))
+                                    unfList.push_back(fCopy);
+                                Data::SaveFriends();
+                            } else {
+                                cerr << "Unfriend failed: " << resp << "\n";
                             }
-                            erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
-                                return fi.id == friendId;
-                            });
-                            auto &unfList = g_unfriendedFriends[acctIdCopy];
-                            if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
-                                return fi.id == friendId;
-                            }))
-                                unfList.push_back(fCopy);
-                            Data::SaveFriends();
-                        } else {
-                            cerr << "Unfriend failed: " << resp << "\n";
-                        }
+                        });
                     });
                 }
 skip_unfriend:

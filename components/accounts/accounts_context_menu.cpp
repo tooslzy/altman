@@ -187,19 +187,18 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
         if (MenuItem("Delete This Account")) {
             char buf[256];
             snprintf(buf, sizeof(buf), "Delete %s?", account.displayName.c_str());
-            if (ConfirmAction(buf)) {
-                LOG_INFO("Attempting to delete account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
+            ConfirmPopup::Add(buf, [id = account.id, displayName = account.displayName]() {
+                LOG_INFO("Attempting to delete account: " + displayName + " (ID: " + to_string(id) + ")");
                 erase_if(
                     g_accounts,
                     [&](const AccountData &acc_data) {
-                        return acc_data.id == account.id;
+                        return acc_data.id == id;
                     });
-                g_selectedAccountIds.erase(account.id);
-                Status::Set("Deleted account " + account.displayName);
+                g_selectedAccountIds.erase(id);
+                Status::Set("Deleted account " + displayName);
                 Data::SaveAccounts();
-                LOG_INFO("Successfully deleted account: " + account.displayName + " (ID: " + to_string(account.id) + ")");
-                CloseCurrentPopup();
-            }
+                LOG_INFO("Successfully deleted account: " + displayName + " (ID: " + to_string(id) + ")");
+            });
         }
         PopStyleColor();
 
@@ -209,7 +208,7 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
             snprintf(buf, sizeof(buf), "Delete %zu Selected Account(s)", g_selectedAccountIds.size());
             PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
             if (MenuItem(buf)) {
-                if (ConfirmAction("Delete selected accounts?")) {
+                ConfirmPopup::Add("Delete selected accounts?", []() {
                     LOG_INFO("Attempting to delete " + to_string(g_selectedAccountIds.size()) + " selected accounts.");
                     erase_if(
                         g_accounts,
@@ -220,8 +219,7 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                     Data::SaveAccounts();
                     Status::Set("Deleted selected accounts");
                     LOG_INFO("Successfully deleted selected accounts.");
-                    CloseCurrentPopup();
-                }
+                });
             }
             PopStyleColor();
         }

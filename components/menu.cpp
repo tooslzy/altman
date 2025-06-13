@@ -182,7 +182,7 @@ bool RenderMainMenu() {
                 snprintf(buf, sizeof(buf), "Delete %zu Selected", g_selectedAccountIds.size());
                 PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
                 if (MenuItem(buf)) {
-                    if (ConfirmAction("Delete selected accounts?")) {
+                    ConfirmPopup::Add("Delete selected accounts?", []() {
                         erase_if(
                             g_accounts,
                             [&](const AccountData &acct) {
@@ -191,7 +191,7 @@ bool RenderMainMenu() {
                         g_selectedAccountIds.clear();
                         Data::SaveAccounts();
                         LOG_INFO("Deleted selected accounts.");
-                    }
+                    });
                 }
                 PopStyleColor();
             }

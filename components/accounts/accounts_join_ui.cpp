@@ -84,89 +84,94 @@ void RenderJoinOptions() {
 
     Separator();
     if (Button(" \xEF\x8B\xB6  Join ")) {
-#ifdef _WIN32
-        if (!g_multiRobloxEnabled && isRobloxRunning()) {
-            if (!ConfirmAction("Roblox is already running. Launch anyway?"))
+        auto doJoin = [&]() {
+            if (g_selectedAccountIds.empty()) {
+                ModalPopup::Add("Select an account first.");
                 return;
-        }
-#endif
-        if (g_selectedAccountIds.empty()) {
-            ModalPopup::Add("Select an account first.");
-            return;
-        }
+            }
 
-        if (join_type_combo_index == 2) {
-            string username = join_value_buf;
-            vector<pair<int, string> > accounts;
-            for (int id: g_selectedAccountIds) {
+            if (join_type_combo_index == 2) {
+                string username = join_value_buf;
+                vector<pair<int, string>> accounts;
+                for (int id : g_selectedAccountIds) {
+                    auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
+                                           [id](auto &a) { return a.id == id; });
+                    if (it != g_accounts.end())
+                        accounts.emplace_back(it->id, it->cookie);
+                }
+                if (accounts.empty())
+                    return;
+
+                Threading::newThread([username, accounts]() {
+                    try {
+                        uint64_t uid = RobloxApi::getUserIdFromUsername(username);
+                        auto pres = RobloxApi::getPresences({uid}, accounts.front().second);
+                        auto it = pres.find(uid);
+                        if (it == pres.end() || it->second.presence != "InGame" ||
+                            it->second.placeId == 0 || it->second.gameId.empty()) {
+                            Status::Error("User is not joinable");
+                            return;
+                        }
+
+                        launchRobloxSequential(it->second.placeId, it->second.gameId, accounts);
+                    } catch (const std::exception &e) {
+                        LOG_ERROR(std::string("Join by username failed: ") + e.what());
+                        Status::Error("Failed to join by username");
+                    }
+                });
+                return;
+            }
+
+            uint64_t placeId_val = 0;
+            std::string jobId_str;
+
+            try {
+                placeId_val = std::stoull(join_value_buf);
+
+                if (join_type_combo_index == 1) {
+                    jobId_str = join_jobid_buf;
+                } else if (join_type_combo_index != 0) {
+                    LOG_ERROR("Error: Join type not supported for direct launch");
+                    return;
+                }
+            } catch (const std::invalid_argument &ia) {
+                LOG_ERROR("Invalid numeric input for join: " + std::string(ia.what()));
+                return;
+            } catch (const std::out_of_range &oor) {
+                LOG_ERROR("Numeric input out of range for join: " + std::string(oor.what()));
+                return;
+            }
+
+            for (int id : g_selectedAccountIds) {
                 auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
                                        [id](auto &a) { return a.id == id; });
-                if (it != g_accounts.end())
-                    accounts.emplace_back(it->id, it->cookie);
-            }
-            if (accounts.empty())
-                return;
+                if (it == g_accounts.end())
+                    continue;
 
-            Threading::newThread([username, accounts]() {
-                try {
-                    uint64_t uid = RobloxApi::getUserIdFromUsername(username);
-                    auto pres = RobloxApi::getPresences({uid}, accounts.front().second);
-                    auto it = pres.find(uid);
-                    if (it == pres.end() || it->second.presence != "InGame" ||
-                        it->second.placeId == 0 || it->second.gameId.empty()) {
-                        Status::Error("User is not joinable");
-                        return;
+                std::thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
+                    LOG_INFO("Launching Roblox for account " + std::to_string(account_id) +
+                             " PlaceID=" + std::to_string(placeId_val) +
+                             (jobId_str.empty() ? "" : " JobID=" + jobId_str));
+
+                    HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
+                    if (proc) {
+                        WaitForInputIdle(proc, INFINITE);
+                        CloseHandle(proc);
+                        LOG_INFO("Roblox launched successfully for account " + std::to_string(account_id));
+                    } else {
+                        LOG_ERROR("Failed to start Roblox for account " + std::to_string(account_id));
                     }
-
-                    launchRobloxSequential(it->second.placeId, it->second.gameId, accounts);
-                } catch (const std::exception &e) {
-                    LOG_ERROR(std::string("Join by username failed: ") + e.what());
-                    Status::Error("Failed to join by username");
-                }
-            });
-            return;
-        }
-
-        uint64_t placeId_val = 0;
-        std::string jobId_str;
-
-        try {
-            placeId_val = std::stoull(join_value_buf);
-
-            if (join_type_combo_index == 1) {
-                jobId_str = join_jobid_buf;
-            } else if (join_type_combo_index != 0) {
-                LOG_ERROR("Error: Join type not supported for direct launch");
-                return;
+                }).detach();
             }
-        } catch (const std::invalid_argument &ia) {
-            LOG_ERROR("Invalid numeric input for join: " + std::string(ia.what()));
-            return;
-        } catch (const std::out_of_range &oor) {
-            LOG_ERROR("Numeric input out of range for join: " + std::string(oor.what()));
-            return;
+        };
+#ifdef _WIN32
+        if (!g_multiRobloxEnabled && isRobloxRunning()) {
+            ConfirmPopup::Add("Roblox is already running. Launch anyway?", doJoin);
+        } else {
+            doJoin();
         }
-
-        for (int id: g_selectedAccountIds) {
-            auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
-                                   [id](auto &a) { return a.id == id; });
-            if (it == g_accounts.end())
-                continue;
-
-            std::thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
-                LOG_INFO("Launching Roblox for account " + std::to_string(account_id) +
-                    " PlaceID=" + std::to_string(placeId_val) +
-                    (jobId_str.empty() ? "" : " JobID=" + jobId_str));
-
-                HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
-                if (proc) {
-                    WaitForInputIdle(proc, INFINITE);
-                    CloseHandle(proc);
-                    LOG_INFO("Roblox launched successfully for account " + std::to_string(account_id));
-                } else {
-                    LOG_ERROR("Failed to start Roblox for account " + std::to_string(account_id));
-                }
-            }).detach();
-        }
+#else
+        doJoin();
+#endif
     }
 }
