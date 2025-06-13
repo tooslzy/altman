@@ -235,7 +235,7 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
 
         PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, 4.0f));
         if (BeginTable("GameInfoTable", 2, tableFlags)) {
-            TableSetupColumn("##label", ImGuiTableColumnFlags_WidthFixed, 110.f);
+            TableSetupColumn("##label", ImGuiTableColumnFlags_WidthFixed, 140.f);
             TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
 
             auto addRow = [&](const char *label, const string &valueString) {

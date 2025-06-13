@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <imgui.h>
 #include <string>
+#include <system_error>
 #include <vector>
 #include <mutex>
 #include <atomic>
@@ -36,6 +37,25 @@ static atomic_bool g_stop_log_watcher{false};
 static once_flag g_start_log_watcher_once;
 static mutex g_logs_mtx;
 
+static void clearLogs() {
+    string dir = logsFolder();
+    if (!dir.empty() && fs::exists(dir)) {
+        for (const auto &entry : fs::directory_iterator(dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".log") {
+                error_code ec;
+                fs::remove(entry.path(), ec);
+                if (ec)
+                    LOG_WARN("Failed to delete log: " + entry.path().string());
+            }
+        }
+    }
+    {
+        lock_guard<mutex> lk(g_logs_mtx);
+        g_logs.clear();
+        g_selected_log_idx = -1;
+    }
+}
+
 static void refreshLogs() {
     if (g_logs_loading.load())
         return;
@@ -45,7 +65,7 @@ static void refreshLogs() {
         LOG_INFO("Scanning Roblox logs folder...");
         vector<LogInfo> tempLogs;
         string dir = logsFolder();
-        if (!dir.empty()) {
+        if (!dir.empty() && fs::exists(dir)) {
             for (const auto &entry: fs::directory_iterator(dir)) {
                 if (entry.is_regular_file()) {
                     string fName = entry.path().filename().string();
@@ -77,7 +97,7 @@ static void refreshLogs() {
 
 static void workerScan() {
     string dir = logsFolder();
-    if (dir.empty())
+    if (dir.empty() || !fs::exists(dir))
         return;
 
     vector<LogInfo> tempLogs;
@@ -199,6 +219,10 @@ void RenderHistoryTab() {
 
     if (Button("Refresh Logs")) {
         refreshLogs();
+    }
+    SameLine();
+    if (Button("Clear Logs")) {
+        clearLogs();
     }
     SameLine();
     if (g_logs_loading.load()) {

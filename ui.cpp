@@ -25,8 +25,8 @@ struct TabInfo {
 static const TabInfo tabs[] = {
     {"\xEF\x80\x87  Accounts", Tab_Accounts, RenderFullAccountsTabContent},
     {"\xEF\x83\x80  Friends", Tab_Friends, RenderFriendsTab},
-    {"\xEF\x88\xB3  Servers", Tab_Servers, RenderServersTab},
     {"\xEF\x84\x9B  Games", Tab_Games, RenderGamesTab},
+    {"\xEF\x88\xB3  Servers", Tab_Servers, RenderServersTab},
     {"\xEF\x85\x9C  History", Tab_History, RenderHistoryTab},
     {"\xEF\x8A\xA8  Console", Tab_Console, Console::RenderConsoleTab},
     {"\xEF\x80\x93  Settings", Tab_Settings, RenderSettingsTab}
