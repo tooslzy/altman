@@ -257,6 +257,15 @@ namespace RobloxApi {
         return HttpClient::decode(response);
     }
 
+    static bool isCookieValid(const string &cookie) {
+        try {
+            getAuthenticatedUser(cookie);
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+
     static string fetchAuthTicket(const string &cookie) {
         LOG_INFO("Fetching x-csrf token");
         cout << cookie;
