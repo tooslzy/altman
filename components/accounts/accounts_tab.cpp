@@ -5,6 +5,7 @@
 #include <imgui.h>
 #include <random>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include <set>
 #include <unordered_map>
@@ -19,6 +20,11 @@
 #include "../../utils/threading.h"
 
 using namespace ImGui;
+using namespace std;
+
+static bool s_openUrlPopup = false;
+static int s_urlPopupAccountId = -1;
+static char s_urlBuffer[256] = "";
 
 void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *table_id, float table_height) {
     constexpr int column_count = 6;
@@ -98,22 +104,36 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
                 holdStartTimes[account.id] = ImGui::GetTime();
             }
+            bool holdTriggered = false;
             if (IsItemActive()) {
                 auto it = holdStartTimes.find(account.id);
                 if (it != holdStartTimes.end() && (ImGui::GetTime() - it->second) >= 0.65f) {
                     holdStartTimes.erase(it);
-                    if (!account.cookie.empty()) {
-                        LOG_INFO(
-                            "Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id
-                            ) + ")");
-                        Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
-                    } else {
-                        LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
-                        Status::Error("Cookie is empty for this account");
-                    }
+                    holdTriggered = true;
                 }
             } else {
                 holdStartTimes.erase(account.id);
+            }
+
+            if (IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                if (!account.cookie.empty()) {
+                    LOG_INFO("Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id) + ")");
+                    Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
+                } else {
+                    LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
+                    Status::Error("Cookie is empty for this account");
+                }
+            }
+
+            if (holdTriggered) {
+                if (!account.cookie.empty()) {
+                    s_openUrlPopup = true;
+                    s_urlPopupAccountId = account.id;
+                    s_urlBuffer[0] = '\0';
+                } else {
+                    LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
+                    Status::Error("Cookie is empty for this account");
+                }
             }
 
             string context_menu_id = string(table_id) + "_ContextMenu_" + to_string(account.id);
@@ -163,6 +183,30 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             PopID();
         }
         EndTable();
+    }
+
+    if (s_openUrlPopup) {
+        OpenPopup("Open URL");
+        s_openUrlPopup = false;
+    }
+    if (BeginPopupModal("Open URL", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        InputTextWithHint("##WebviewUrl", "Enter URL", s_urlBuffer, sizeof(s_urlBuffer));
+        Spacing();
+        if (Button("Open") && s_urlBuffer[0] != '\0') {
+            auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) { return a.id == s_urlPopupAccountId; });
+            if (it != g_accounts.end()) {
+                string url = s_urlBuffer;
+                Threading::newThread([acc = *it, url]() { LaunchWebview(url, acc.username + " - " + acc.userId, acc.cookie); });
+            }
+            s_urlBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        SameLine();
+        if (Button("Cancel")) {
+            s_urlBuffer[0] = '\0';
+            CloseCurrentPopup();
+        }
+        EndPopup();
     }
 }
 
