@@ -18,8 +18,7 @@
 - **Server Browser** - Browse active servers for any Roblox game
 - **Game Search** - Search and discover Roblox games
 - **Log Parser** - Converts Roblox log files into human-readable format
-- **Modal Notifications** - Important warnings and errors pop up as modal dialogs
-
+- 
 ---
 
 ## Usage
@@ -50,7 +49,6 @@ Use the **Add Friend** button (next to Refresh) to send a request by username or
 ## Requirements
 
 - Windows 10/11 (Tested for Windows 11 24H2)
-- .NET Framework 4.7.2+
 - Active internet connection
 
 ---
