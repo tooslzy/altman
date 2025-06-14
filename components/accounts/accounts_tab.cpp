@@ -9,6 +9,8 @@
 #include <vector>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
+#include <ctime>
 
 #include "webview.hpp"
 #include "../../utils/roblox_api.h"
@@ -26,6 +28,7 @@ using namespace std;
 static bool s_openUrlPopup = false;
 static int s_urlPopupAccountId = -1;
 static char s_urlBuffer[256] = "";
+static std::unordered_set<int> s_voiceUpdateInProgress;
 
 void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *table_id, float table_height) {
     constexpr int column_count = 6;
@@ -180,10 +183,34 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             else if (account.voiceStatus == "Banned")
                 voiceCol = ImVec4(1.f, 0.4f, 0.4f, 1.f);
 
+            if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0) {
+                time_t now = time(nullptr);
+                if (now >= account.voiceBanExpiry &&
+                    !account.cookie.empty() &&
+                    s_voiceUpdateInProgress.count(account.id) == 0) {
+                    s_voiceUpdateInProgress.insert(account.id);
+                    int accId = account.id;
+                    string cookie = account.cookie;
+                    Threading::newThread([accId, cookie]() {
+                        auto vs = RobloxApi::getVoiceChatStatus(cookie);
+                        MainThread::Post([accId, vs]() {
+                            auto it = find_if(g_accounts.begin(), g_accounts.end(),
+                                             [&](const AccountData &a) { return a.id == accId; });
+                            if (it != g_accounts.end()) {
+                                it->voiceStatus = vs.status;
+                                it->voiceBanExpiry = vs.bannedUntil;
+                            }
+                            s_voiceUpdateInProgress.erase(accId);
+                            Data::SaveAccounts();
+                        });
+                    });
+                }
+            }
+
             TextColored(voiceCol, "%s", account.voiceStatus.c_str());
             if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0 && IsItemHovered()) {
                 BeginTooltip();
-                string timeStr = formatRelativeFuture(account.voiceBanExpiry);
+                string timeStr = formatCountdown(account.voiceBanExpiry);
                 TextUnformatted(timeStr.c_str());
                 EndTooltip();
             }
