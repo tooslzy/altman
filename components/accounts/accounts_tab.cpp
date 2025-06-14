@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <ctime>
 
+#include "main_thread.h"
 #include "webview.hpp"
 #include "../../utils/roblox_api.h"
 #include "../components.h"
