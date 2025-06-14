@@ -106,7 +106,7 @@ bool RenderUI() {
             if (selectedNames.empty())
                 Text("Status: %s", Status::Get().c_str());
             else
-                Text("Selected: %s | Status: %s", selectedNames.c_str(), Status::Get().c_str());
+                Text("Selected: %s", selectedNames.c_str());
         }
         End();
         PopStyleVar(2);
