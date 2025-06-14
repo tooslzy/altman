@@ -171,79 +171,62 @@ void RenderFriendsTab() {
 				         ? f.username
 				         : (f.displayName + " (" + f.username + ")");
 
-			ImVec4 txtCol = getStatusColor(f.presence);
-			PushStyleColor(ImGuiCol_Text, txtCol);
+                        ImVec4 txtCol = getStatusColor(f.presence);
+                        PushStyleColor(ImGuiCol_Text, txtCol);
 
                         bool clicked = Selectable(label.c_str(),
                                                   g_selectedFriendIdx == static_cast<int>(i),
                                                   ImGuiSelectableFlags_SpanAllColumns);
-                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
-
                         PopStyleColor();
-                       if (f.presence == "InGame" && !f.lastLocation.empty()) {
-                                const float indent = GetStyle().FramePadding.x * 4.0f;
-                                Indent(indent);
-                                ImVec4 gameCol = txtCol;
-                                gameCol.x *= 0.75f;
-				gameCol.y *= 0.75f;
-				gameCol.z *= 0.75f;
-				gameCol.w *= 0.65f;
 
-				PushStyleColor(ImGuiCol_Text, gameCol);
-				TextUnformatted(string("\xEF\x83\x9A  " + f.lastLocation).c_str());
-				PopStyleColor();
-
-				Unindent(indent);
-                        }
-
-                        if (openCtx) {
+                        if (BeginPopupContextItem("FriendRowContextMenu")) {
                                 if (MenuItem("Copy Display Name")) {
                                         SetClipboardText(f.displayName.c_str());
                                 }
-				if (MenuItem("Copy Username")) {
-					SetClipboardText(f.username.c_str());
-				}
-				if (MenuItem("Copy User ID")) {
-					string idStr = to_string(f.id);
-					SetClipboardText(idStr.c_str());
-				}
+                                if (MenuItem("Copy Username")) {
+                                        SetClipboardText(f.username.c_str());
+                                }
+                                if (MenuItem("Copy User ID")) {
+                                        string idStr = to_string(f.id);
+                                        SetClipboardText(idStr.c_str());
+                                }
                                 bool inGame = f.presence == "InGame" && f.placeId && !f.gameId.empty();
                                 if (inGame) {
                                         Separator();
                                         if (MenuItem("Join")) {
-						vector<pair<int, string> > accounts;
-						for (int id: g_selectedAccountIds) {
-							auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
-								return a.id == id;
-							});
-							if (itA != g_accounts.end())
-								accounts.emplace_back(itA->id, itA->cookie);
-						}
-						if (!accounts.empty()) {
-							Threading::newThread([row = f, accounts]() {
-								launchRobloxSequential(row.placeId, row.gameId, accounts);
-							});
-						}
-					}
-					if (MenuItem("Copy Place ID")) {
-						SetClipboardText(to_string(f.placeId).c_str());
-					}
-					if (MenuItem("Copy Job ID")) {
-						SetClipboardText(f.gameId.c_str());
-					}
-					if (BeginMenu("Copy Launch Method")) {
-						char buf[256];
-						snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
-						         (unsigned long long) f.placeId, f.gameId.c_str());
-						if (MenuItem("Deep Link")) SetClipboardText(buf);
-						string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId +
-						            "\")";
-						if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
-						string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" +
-						              to_string(f.placeId) + ", \"" + f.gameId + "\")";
-						if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
-						ImGui::EndMenu();
-					}
+                                                vector<pair<int, string> > accounts;
+                                                for (int id: g_selectedAccountIds) {
+                                                        auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
+                                                                return a.id == id;
+                                                        });
+                                                        if (itA != g_accounts.end())
+                                                                accounts.emplace_back(itA->id, itA->cookie);
+                                                }
+                                                if (!accounts.empty()) {
+                                                        Threading::newThread([row = f, accounts]() {
+                                                                launchRobloxSequential(row.placeId, row.gameId, accounts);
+                                                        });
+                                                }
+                                        }
+                                        if (MenuItem("Copy Place ID")) {
+                                                SetClipboardText(to_string(f.placeId).c_str());
+                                        }
+                                        if (MenuItem("Copy Job ID")) {
+                                                SetClipboardText(f.gameId.c_str());
+                                        }
+                                        if (BeginMenu("Copy Launch Method")) {
+                                                char buf[256];
+                                                snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
+                                                         (unsigned long long) f.placeId, f.gameId.c_str());
+                                                if (MenuItem("Deep Link")) SetClipboardText(buf);
+                                                string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId +
+                                                            "\")";
+                                                if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                                                string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" +
+                                                              to_string(f.placeId) + ", \"" + f.gameId + "\")";
+                                                if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                                                ImGui::EndMenu();
+                                        }
                                         if (MenuItem("Generate Browser Link")) {
                                                 string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
                                                               "&gameInstanceId=" + f.gameId;
@@ -251,44 +234,61 @@ void RenderFriendsTab() {
                                         }
                                 }
                                 Separator();
-				PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-				if (MenuItem("Unfriend")) {
-					char buf[256];
-					snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
-					FriendInfo fCopy = f;
-					uint64_t friendId = fCopy.id;
-					string cookieCopy = acct.cookie;
-					int acctIdCopy = acct.id;
-					ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
-						Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
-							string resp;
-							bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
-							if (ok) {
-								erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-								if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size())
-								    &&
-								    g_friends[g_selectedFriendIdx].id == friendId) {
-									g_selectedFriendIdx = -1;
-									g_selectedFriend = {};
-								}
-								erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
-									return fi.id == friendId;
-								});
-								auto &unfList = g_unfriendedFriends[acctIdCopy];
-								if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
-									return fi.id == friendId;
-								}))
-									unfList.push_back(fCopy);
-								Data::SaveFriends();
-							} else {
-								cerr << "Unfriend failed: " << resp << "\n";
-							}
-						});
-					});
-				}
-				PopStyleColor();
-				EndPopup();
-			}
+                                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
+                                if (MenuItem("Unfriend")) {
+                                        char buf[256];
+                                        snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
+                                        FriendInfo fCopy = f;
+                                        uint64_t friendId = fCopy.id;
+                                        string cookieCopy = acct.cookie;
+                                        int acctIdCopy = acct.id;
+                                        ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
+                                                Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
+                                                        string resp;
+                                                        bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
+                                                        if (ok) {
+                                                                erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
+                                                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size())
+                                                                    &&
+                                                                    g_friends[g_selectedFriendIdx].id == friendId) {
+                                                                        g_selectedFriendIdx = -1;
+                                                                        g_selectedFriend = {};
+                                                                }
+                                                                erase_if(g_accountFriends[acctIdCopy], [&](const FriendInfo &fi) {
+                                                                        return fi.id == friendId;
+                                                                });
+                                                                auto &unfList = g_unfriendedFriends[acctIdCopy];
+                                                                if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
+                                                                        return fi.id == friendId;
+                                                                }))
+                                                                        unfList.push_back(fCopy);
+                                                                Data::SaveFriends();
+                                                        } else {
+                                                                cerr << "Unfriend failed: " << resp << "\n";
+                                                        }
+                                                });
+                                        });
+                                }
+                                PopStyleColor();
+                                EndPopup();
+                        }
+
+                        if (f.presence == "InGame" && !f.lastLocation.empty()) {
+                                const float indent = GetStyle().FramePadding.x * 4.0f;
+                                Indent(indent);
+                                ImVec4 gameCol = txtCol;
+                                gameCol.x *= 0.75f;
+                                gameCol.y *= 0.75f;
+                                gameCol.z *= 0.75f;
+                                gameCol.w *= 0.65f;
+
+                                PushStyleColor(ImGuiCol_Text, gameCol);
+                                TextUnformatted(string("\xEF\x83\x9A  " + f.lastLocation).c_str());
+                                PopStyleColor();
+
+                                Unindent(indent);
+                        }
+
 
 			if (clicked) {
 				g_selectedFriendIdx = static_cast<int>(i);
