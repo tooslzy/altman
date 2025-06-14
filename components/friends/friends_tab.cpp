@@ -174,12 +174,14 @@ void RenderFriendsTab() {
 			ImVec4 txtCol = getStatusColor(f.presence);
 			PushStyleColor(ImGuiCol_Text, txtCol);
 
-			bool clicked = Selectable(label.c_str(),
-			                          g_selectedFriendIdx == static_cast<int>(i),
-			                          ImGuiSelectableFlags_SpanAllColumns);
+                        bool clicked = Selectable(label.c_str(),
+                                                  g_selectedFriendIdx == static_cast<int>(i),
+                                                  ImGuiSelectableFlags_SpanAllColumns);
 
-			PopStyleColor();
-			if (f.presence == "InGame" && !f.lastLocation.empty()) {
+                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
+
+                        PopStyleColor();
+                        if (f.presence == "InGame" && !f.lastLocation.empty()) {
 				const float indent = GetStyle().FramePadding.x * 4.0f;
 				Indent(indent);
 				ImVec4 gameCol = txtCol;
@@ -193,9 +195,9 @@ void RenderFriendsTab() {
 				PopStyleColor();
 
 				Unindent(indent);
-			}
+                        }
 
-			if (BeginPopupContextItem("FriendRowContextMenu")) {
+                        if (openCtx) {
 				if (MenuItem("Copy Display Name")) {
 					SetClipboardText(f.displayName.c_str());
 				}
