@@ -178,13 +178,11 @@ void RenderFriendsTab() {
                                                   g_selectedFriendIdx == static_cast<int>(i),
                                                   ImGuiSelectableFlags_SpanAllColumns);
 
-                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
-
                         PopStyleColor();
                         if (f.presence == "InGame" && !f.lastLocation.empty()) {
-				const float indent = GetStyle().FramePadding.x * 4.0f;
-				Indent(indent);
-				ImVec4 gameCol = txtCol;
+                                const float indent = GetStyle().FramePadding.x * 4.0f;
+                                Indent(indent);
+                                ImVec4 gameCol = txtCol;
 				gameCol.x *= 0.75f;
 				gameCol.y *= 0.75f;
 				gameCol.z *= 0.75f;
@@ -197,10 +195,11 @@ void RenderFriendsTab() {
 				Unindent(indent);
                         }
 
+                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
                         if (openCtx) {
-				if (MenuItem("Copy Display Name")) {
-					SetClipboardText(f.displayName.c_str());
-				}
+                                if (MenuItem("Copy Display Name")) {
+                                        SetClipboardText(f.displayName.c_str());
+                                }
 				if (MenuItem("Copy Username")) {
 					SetClipboardText(f.username.c_str());
 				}
@@ -208,9 +207,10 @@ void RenderFriendsTab() {
 					string idStr = to_string(f.id);
 					SetClipboardText(idStr.c_str());
 				}
-				Separator();
-				if (f.presence == "InGame" && f.placeId && !f.gameId.empty()) {
-					if (MenuItem("Join")) {
+                                bool inGame = f.presence == "InGame" && f.placeId && !f.gameId.empty();
+                                if (inGame) {
+                                        Separator();
+                                        if (MenuItem("Join")) {
 						vector<pair<int, string> > accounts;
 						for (int id: g_selectedAccountIds) {
 							auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
@@ -244,13 +244,13 @@ void RenderFriendsTab() {
 						if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
 						ImGui::EndMenu();
 					}
-					if (MenuItem("Generate Browser Link")) {
-						string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
-						              "&gameInstanceId=" + f.gameId;
-						SetClipboardText(link.c_str());
-					}
-				}
-				Separator();
+                                        if (MenuItem("Generate Browser Link")) {
+                                                string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
+                                                              "&gameInstanceId=" + f.gameId;
+                                                SetClipboardText(link.c_str());
+                                        }
+                                }
+                                Separator();
 				PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
 				if (MenuItem("Unfriend")) {
 					char buf[256];
