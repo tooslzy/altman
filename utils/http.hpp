@@ -6,6 +6,7 @@
 #include <sstream>
 #include <cpr/cpr.h>
 #include <nlohmann/json.hpp>
+#include "logging.hpp"
 
 using namespace std;
 
@@ -79,6 +80,11 @@ namespace HttpClient {
 
 
     inline nlohmann::json decode(const Response &response) {
-        return nlohmann::json::parse(response.text);
+        try {
+            return nlohmann::json::parse(response.text);
+        } catch (const nlohmann::json::exception &e) {
+            LOG_ERROR(std::string("Failed to parse JSON response: ") + e.what());
+            return nlohmann::json::object();
+        }
     }
 }
