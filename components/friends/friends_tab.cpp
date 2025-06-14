@@ -177,13 +177,14 @@ void RenderFriendsTab() {
                         bool clicked = Selectable(label.c_str(),
                                                   g_selectedFriendIdx == static_cast<int>(i),
                                                   ImGuiSelectableFlags_SpanAllColumns);
+                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
 
                         PopStyleColor();
-                        if (f.presence == "InGame" && !f.lastLocation.empty()) {
+                       if (f.presence == "InGame" && !f.lastLocation.empty()) {
                                 const float indent = GetStyle().FramePadding.x * 4.0f;
                                 Indent(indent);
                                 ImVec4 gameCol = txtCol;
-				gameCol.x *= 0.75f;
+                                gameCol.x *= 0.75f;
 				gameCol.y *= 0.75f;
 				gameCol.z *= 0.75f;
 				gameCol.w *= 0.65f;
@@ -195,7 +196,6 @@ void RenderFriendsTab() {
 				Unindent(indent);
                         }
 
-                        bool openCtx = BeginPopupContextItem("FriendRowContextMenu");
                         if (openCtx) {
                                 if (MenuItem("Copy Display Name")) {
                                         SetClipboardText(f.displayName.c_str());
