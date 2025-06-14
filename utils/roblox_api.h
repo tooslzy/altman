@@ -85,19 +85,20 @@ namespace RobloxApi {
             {{"Cookie", ".ROBLOSECURITY=" + cookie}});
 
         if (resp.status_code != 200) {
-            LOG_INFO("Failed to fetch friends: HTTP " + to_string(resp.status_code));
-            throw runtime_error("Failed to fetch friends: HTTP " + to_string(resp.status_code));
+            LOG_ERROR("Failed to fetch friends: HTTP " + to_string(resp.status_code));
+            return {};
         }
 
         nlohmann::json j = HttpClient::decode(resp);
         vector<FriendInfo> friends;
-        for (const auto &item: j.at("data")) {
-            FriendInfo f;
-            f.id = item.value("id", 0ULL);
-            f.displayName = item.value("displayName", "");
-            f.username = item.value("name", "");
-
-            friends.push_back(f);
+        if (j.contains("data") && j["data"].is_array()) {
+            for (const auto &item: j["data"]) {
+                FriendInfo f;
+                f.id = item.value("id", 0ULL);
+                f.displayName = item.value("displayName", "");
+                f.username = item.value("name", "");
+                friends.push_back(f);
+            }
         }
         return friends;
     }
@@ -109,15 +110,17 @@ namespace RobloxApi {
             {{"Accept", "application/json"}});
 
         if (resp.status_code != 200) {
-            LOG_INFO("Failed to fetch user info: HTTP " + to_string(resp.status_code));
-            throw runtime_error("Failed to fetch user info: HTTP " + to_string(resp.status_code));
+            LOG_ERROR("Failed to fetch user info: HTTP " + to_string(resp.status_code));
+            return FriendInfo{};
         }
 
         nlohmann::json j = HttpClient::decode(resp);
         FriendInfo f;
-        f.id = j.value("id", 0ULL);
-        f.username = j.value("name", "");
-        f.displayName = j.value("displayName", "");
+        if (!j.is_null()) {
+            f.id = j.value("id", 0ULL);
+            f.username = j.value("name", "");
+            f.displayName = j.value("displayName", "");
+        }
         return f;
     }
 
@@ -139,22 +142,32 @@ namespace RobloxApi {
                 "https://games.roblox.com/v1/games?universeIds=" + to_string(universeId);
 
         HttpClient::Response resp = HttpClient::get(url);
-        if (resp.status_code != 200)
-            throw runtime_error("detail fetch failed");
-
-        json j = json::parse(resp.text)["data"].at(0);
+        if (resp.status_code != 200) {
+            LOG_ERROR("Game detail fetch failed: HTTP " + to_string(resp.status_code));
+            return GameDetail{};
+        }
 
         GameDetail d;
-        d.genre = j.value("genre", "");
-        d.description = j.value("description", "");
-        d.visits = j.value("visits", 0ULL);
-        d.maxPlayers = j.value("maxPlayers", 0);
-        d.createdIso = j.value("created", "");
-        d.updatedIso = j.value("updated", "");
+        try {
+            json root = json::parse(resp.text);
+            if (root.contains("data") && root["data"].is_array() && !root["data"].empty()) {
+                const auto &j = root["data"][0];
+                d.genre = j.value("genre", "");
+                d.description = j.value("description", "");
+                d.visits = j.value("visits", 0ULL);
+                d.maxPlayers = j.value("maxPlayers", 0);
+                d.createdIso = j.value("created", "");
+                d.updatedIso = j.value("updated", "");
 
-        const auto &c = j["creator"];
-        d.creatorName = c.value("name", "");
-        d.creatorVerified = c.value("hasVerifiedBadge", false);
+                if (j.contains("creator")) {
+                    const auto &c = j["creator"];
+                    d.creatorName = c.value("name", "");
+                    d.creatorVerified = c.value("hasVerifiedBadge", false);
+                }
+            }
+        } catch (const std::exception &e) {
+            LOG_ERROR(std::string("Failed to parse game detail: ") + e.what());
+        }
 
         return d;
     }
@@ -173,29 +186,36 @@ namespace RobloxApi {
                 (cursor.empty() ? "" : "&cursor=" + cursor);
 
         HttpClient::Response resp = HttpClient::get(url);
-        if (resp.status_code != 200)
-            throw runtime_error("Failed to fetch servers: HTTP " +
-                                to_string(resp.status_code));
+        if (resp.status_code != 200) {
+            LOG_ERROR("Failed to fetch servers: HTTP " + to_string(resp.status_code));
+            return ServerPage{};
+        }
 
         auto json = HttpClient::decode(resp);
 
         ServerPage page;
-        page.nextCursor = json.at("nextPageCursor").is_null()
-                              ? string{}
-                              : json.at("nextPageCursor").get<string>();
+        if (json.contains("nextPageCursor")) {
+            page.nextCursor = json["nextPageCursor"].is_null()
+                                  ? string{}
+                                  : json["nextPageCursor"].get<string>();
+        }
 
-        page.prevCursor = json.at("previousPageCursor").is_null()
-                              ? string{}
-                              : json.at("previousPageCursor").get<string>();
+        if (json.contains("previousPageCursor")) {
+            page.prevCursor = json["previousPageCursor"].is_null()
+                                  ? string{}
+                                  : json["previousPageCursor"].get<string>();
+        }
 
-        for (auto &e: json.at("data")) {
-            PublicServerInfo s;
-            s.jobId = e.at("id").get<string>();
-            s.currentPlayers = e.at("playing").get<int>();
-            s.maximumPlayers = e.at("maxPlayers").get<int>();
-            s.averagePing = e.at("ping").get<double>();
-            s.averageFps = e.at("fps").get<double>();
-            page.data.push_back(move(s));
+        if (json.contains("data") && json["data"].is_array()) {
+            for (auto &e: json["data"]) {
+                PublicServerInfo s;
+                s.jobId = e.value("id", "");
+                s.currentPlayers = e.value("playing", 0);
+                s.maximumPlayers = e.value("maxPlayers", 0);
+                s.averagePing = e.value("ping", 0.0);
+                s.averageFps = e.value("fps", 0.0);
+                page.data.push_back(move(s));
+            }
         }
         return page;
     }
@@ -219,21 +239,26 @@ namespace RobloxApi {
 
         auto j = HttpClient::decode(resp);
 
-        for (auto &group: j["searchResults"]) {
-            if (group.value("contentGroupType", "") != "Game")
-                continue;
+        if (j.contains("searchResults") && j["searchResults"].is_array()) {
+            for (auto &group: j["searchResults"]) {
+                if (group.value("contentGroupType", "") != "Game")
+                    continue;
 
-            for (auto &g: group["contents"]) {
-                GameInfo info;
-                info.name = g.value("name", "");
-                info.universeId = g.value("universeId", 0ULL);
-                info.placeId = g.value("rootPlaceId", 0ULL);
-                info.playerCount = g.value("playerCount", 0);
-                info.upVotes = g.value("totalUpVotes", 0);
-                info.downVotes = g.value("totalDownVotes", 0);
-                info.creatorName = g.value("creatorName", "");
-                info.creatorVerified = g.value("creatorHasVerifiedBadge", false);
-                out.push_back(move(info));
+                if (!group.contains("contents") || !group["contents"].is_array())
+                    continue;
+
+                for (auto &g: group["contents"]) {
+                    GameInfo info;
+                    info.name = g.value("name", "");
+                    info.universeId = g.value("universeId", 0ULL);
+                    info.placeId = g.value("rootPlaceId", 0ULL);
+                    info.playerCount = g.value("playerCount", 0);
+                    info.upVotes = g.value("totalUpVotes", 0);
+                    info.downVotes = g.value("totalDownVotes", 0);
+                    info.creatorName = g.value("creatorName", "");
+                    info.creatorVerified = g.value("creatorHasVerifiedBadge", false);
+                    out.push_back(move(info));
+                }
             }
         }
 
@@ -247,11 +272,8 @@ namespace RobloxApi {
             {{"Cookie", ".ROBLOSECURITY=" + cookie}});
 
         if (response.status_code != 200) {
-            LOG_INFO("Failed to fetch user info: HTTP " + to_string(response.status_code));
-
-            throw runtime_error(
-                "Failed to fetch user info: HTTP " +
-                to_string(response.status_code));
+            LOG_ERROR("Failed to fetch user info: HTTP " + to_string(response.status_code));
+            return nlohmann::json::object();
         }
 
         return HttpClient::decode(response);
@@ -303,17 +325,17 @@ namespace RobloxApi {
 
     static uint64_t getUserId(const string &cookie) {
         auto userJson = getAuthenticatedUser(cookie);
-        return userJson.at("id").get<uint64_t>();
+        return userJson.value("id", 0ULL);
     }
 
     static string getUsername(const string &cookie) {
         auto userJson = getAuthenticatedUser(cookie);
-        return userJson.at("name").get<string>();
+        return userJson.value("name", "");
     }
 
     static string getDisplayName(const string &cookie) {
         auto userJson = getAuthenticatedUser(cookie);
-        return userJson.at("displayName").get<string>();
+        return userJson.value("displayName", "");
     }
 
     static string presenceTypeToString(int type) {
@@ -341,17 +363,14 @@ namespace RobloxApi {
             {{"Cookie", ".ROBLOSECURITY=" + cookie}},
             payload.dump());
         if (response.status_code != 200) {
-            LOG_INFO("Presence lookup failed: HTTP " +
-                to_string(response.status_code));
+            LOG_ERROR("Presence lookup failed: HTTP " + to_string(response.status_code));
 
             // If we get HTTP 403, it likely means the user is banned or inaccessible
             if (response.status_code == 403) {
                 return "Banned";
             }
 
-            throw runtime_error(
-                "Presence lookup failed: HTTP " +
-                to_string(response.status_code));
+            return "Offline";
         }
 
         // Print the raw response for debugging
@@ -364,24 +383,13 @@ namespace RobloxApi {
         OutputDebugStringA(("Parsed JSON: " + json.dump()).c_str());
         LOG_INFO("Parsed JSON: " + json.dump());
 
-        auto &jsonData = json.at("userPresences");
-        if (jsonData.empty()) {
-            throw runtime_error("No presence data returned");
-        }
-        OutputDebugStringA(jsonData.dump().c_str());
-
-        try {
-            int typeInt = jsonData.front().at("userPresenceType").get<int>();
+        if (json.contains("userPresences") && json["userPresences"].is_array() && !json["userPresences"].empty()) {
+            const auto &jsonData = json["userPresences"][0];
+            int typeInt = jsonData.value("userPresenceType", 0);
             LOG_INFO("Got user presence for " + to_string(userId));
             return presenceTypeToString(typeInt);
-        } catch (const exception &e) {
-            // Check if the error from presenceTypeToString contains "Invalid UserID"
-            string errorMsg = e.what();
-            if (errorMsg.find("Invalid UserID") != string::npos) {
-                return "Banned";
-            }
-            throw; // Re-throw if it's a different error
         }
+        return "Offline";
     }
 
     struct VoiceSettings {
@@ -472,7 +480,11 @@ namespace RobloxApi {
                 {}
             );
             if (resp.status_code == 200) {
-                d.followers = nlohmann::json::parse(resp.text).value("count", 0);
+                try {
+                    d.followers = nlohmann::json::parse(resp.text).value("count", 0);
+                } catch (const std::exception &e) {
+                    LOG_ERROR(std::string("Failed to parse followers count: ") + e.what());
+                }
             }
             signalDone();
         });
@@ -483,7 +495,11 @@ namespace RobloxApi {
                 {}
             );
             if (resp.status_code == 200) {
-                d.following = nlohmann::json::parse(resp.text).value("count", 0);
+                try {
+                    d.following = nlohmann::json::parse(resp.text).value("count", 0);
+                } catch (const std::exception &e) {
+                    LOG_ERROR(std::string("Failed to parse following count: ") + e.what());
+                }
             }
             signalDone();
         });
@@ -514,22 +530,26 @@ namespace RobloxApi {
             {{"Cookie", ".ROBLOSECURITY=" + cookie}},
             payload.dump());
 
-        if (resp.status_code != 200)
-            throw runtime_error("Batch presence failed: HTTP "
-                                + to_string(resp.status_code));
+        if (resp.status_code != 200) {
+            LOG_ERROR("Batch presence failed: HTTP " + to_string(resp.status_code));
+            return {};
+        }
 
         nlohmann::json j = HttpClient::decode(resp);
         unordered_map<uint64_t, PresenceData> out;
 
-        for (auto &up: j["userPresences"]) {
-            PresenceData d;
-            d.presence = presenceTypeToString(up.value("userPresenceType", 0));
-            d.lastLocation = up.value("lastLocation", "");
-            if (up.contains("placeId") && up["placeId"].is_number_unsigned())
-                d.placeId = up["placeId"].get<uint64_t>();
-            if (up.contains("gameId") && !up["gameId"].is_null())
-                d.gameId = up["gameId"].get<string>();
-            out[up["userId"].get<uint64_t>()] = move(d);
+        if (j.contains("userPresences") && j["userPresences"].is_array()) {
+            for (auto &up: j["userPresences"]) {
+                PresenceData d;
+                d.presence = presenceTypeToString(up.value("userPresenceType", 0));
+                d.lastLocation = up.value("lastLocation", "");
+                if (up.contains("placeId") && up["placeId"].is_number_unsigned())
+                    d.placeId = up["placeId"].get<uint64_t>();
+                if (up.contains("gameId") && !up["gameId"].is_null())
+                    d.gameId = up["gameId"].get<string>();
+                if (up.contains("userId"))
+                    out[up["userId"].get<uint64_t>()] = move(d);
+            }
         }
         return out;
     }
@@ -545,13 +565,16 @@ namespace RobloxApi {
             {},
             payload.dump());
 
-        if (resp.status_code != 200)
-            throw runtime_error("Username lookup failed: HTTP "
-                                + to_string(resp.status_code));
+        if (resp.status_code != 200) {
+            LOG_ERROR("Username lookup failed: HTTP " + to_string(resp.status_code));
+            return 0;
+        }
 
         auto j = HttpClient::decode(resp);
-        if (!j.contains("data") || j["data"].empty())
-            throw runtime_error("Username not found");
+        if (!j.contains("data") || j["data"].empty()) {
+            LOG_ERROR("Username not found");
+            return 0;
+        }
 
         return j["data"][0].value("id", 0ULL);
     }
