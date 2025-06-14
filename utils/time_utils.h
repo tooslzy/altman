@@ -33,3 +33,18 @@ inline std::string formatRelativeFuture(time_t timestamp) {
         ss << seconds << " second" << (seconds == 1 ? "" : "s");
     return ss.str();
 }
+
+inline std::string formatCountdown(time_t timestamp) {
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    auto target = system_clock::from_time_t(timestamp);
+    long long diff = duration_cast<seconds>(target - now).count();
+    if (diff < 0)
+        diff = 0;
+    long long minutes = diff / 60;
+    long long seconds = diff % 60;
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%lld:%02lld", minutes, seconds);
+    return std::string(buf);
+}
