@@ -25,15 +25,6 @@
 using namespace ImGui;
 using namespace std;
 
-static inline void SameLineIfRoom(float upcomingWidth) {
-    float avail = ImGui::GetContentRegionAvail().x;
-    if (avail > upcomingWidth + ImGui::GetStyle().ItemSpacing.x)
-        ImGui::SameLine();
-}
-
-static inline float ButtonWidth(const char *label) {
-    return ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-}
 
 static vector<PublicServerInfo> s_cachedServers;
 static unordered_map<string, RobloxApi::ServerPage> g_pageCache;
@@ -96,9 +87,19 @@ void RenderServersTab() {
         g_targetPlaceId_ServersTab = 0;
     }
 
+    ImGuiStyle &style = GetStyle();
+    float fetchButtonWidth = CalcTextSize("Fetch Servers").x + style.FramePadding.x * 2.0f;
+    float prevButtonWidth = CalcTextSize("\xEF\x81\x93 Prev Page").x + style.FramePadding.x * 2.0f;
+    float nextButtonWidth = CalcTextSize("Next Page \xEF\x81\x94").x + style.FramePadding.x * 2.0f;
+    float buttons_total_width = fetchButtonWidth + prevButtonWidth + nextButtonWidth + style.ItemSpacing.x * 2;
+    float inputWidth = GetContentRegionAvail().x - buttons_total_width - style.ItemSpacing.x;
+    if (inputWidth < 100.0f)
+        inputWidth = 100.0f;
+    PushItemWidth(inputWidth);
     InputTextWithHint("##placeid_servers", "Place Id", s_placeIdBuffer, sizeof(s_placeIdBuffer));
-    SameLineIfRoom(ButtonWidth("Fetch Servers"));
-    if (Button("Fetch Servers")) {
+    PopItemWidth();
+    SameLine(0, style.ItemSpacing.x);
+    if (Button("Fetch Servers", ImVec2(fetchButtonWidth, 0))) {
         string raw_pid{s_placeIdBuffer};
         erase_if(raw_pid, ::isspace);
         if (raw_pid.empty() || !all_of(raw_pid.begin(), raw_pid.end(), ::isdigit)) {
@@ -116,14 +117,14 @@ void RenderServersTab() {
             }
         }
     }
-    SameLineIfRoom(ButtonWidth("\xEF\x81\x93 Prev Page"));
+    SameLine(0, style.ItemSpacing.x);
     BeginDisabled(g_prevCursor_servers.empty());
-    if (Button("\xEF\x81\x93 Prev Page"))
+    if (Button("\xEF\x81\x93 Prev Page", ImVec2(prevButtonWidth, 0)))
         fetchPageServers(g_current_placeId_servers, g_prevCursor_servers);
     EndDisabled();
-    SameLineIfRoom(ButtonWidth("Next Page \xEF\x81\x94"));
+    SameLine(0, style.ItemSpacing.x);
     BeginDisabled(g_nextCursor_servers.empty());
-    if (Button("Next Page \xEF\x81\x94"))
+    if (Button("Next Page \xEF\x81\x94", ImVec2(nextButtonWidth, 0)))
         fetchPageServers(g_current_placeId_servers, g_nextCursor_servers);
     EndDisabled();
 
