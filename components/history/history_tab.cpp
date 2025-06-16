@@ -256,7 +256,6 @@ void RenderHistoryTab() {
                 if (indented)
                     Unindent();
                 string header = thisDay;
-
                 SeparatorText(header.c_str());
                 Indent();
                 indented = true;
