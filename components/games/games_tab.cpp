@@ -24,6 +24,7 @@ using namespace std;
 static char searchBuffer[64] = "";
 static int selectedIndex = -1;
 static vector<GameInfo> gamesList;
+static vector<GameInfo> originalGamesList;
 static unordered_map<uint64_t, RobloxApi::GameDetail> gameDetailCache;
 
 static unordered_set<uint64_t> favoriteGameIds;
@@ -54,6 +55,8 @@ static void RenderSearchResultsList(float listWidth, float availableHeight);
 static void RenderGameDetailsPanel(float panelWidth, float availableHeight);
 
 static void SortGamesList() {
+    gamesList = originalGamesList;
+
     switch (currentSortMode) {
         case GameSortMode::PlayersDesc:
             sort(gamesList.begin(), gamesList.end(), [](const GameInfo &a, const GameInfo &b) {
@@ -101,8 +104,8 @@ static void RenderGameSearch() {
     SameLine(0, style.ItemSpacing.x);
     if (Button(" Search  \xEF\x80\x82 ", ImVec2(searchButtonWidth, 0)) && searchBuffer[0] != '\0') {
         selectedIndex = -1;
-        gamesList = RobloxApi::searchGames(searchBuffer);
-        erase_if(gamesList, [&](const GameInfo &g) {
+        originalGamesList = RobloxApi::searchGames(searchBuffer);
+        erase_if(originalGamesList, [&](const GameInfo &g) {
             return favoriteGameIds.contains(g.universeId);
         });
         SortGamesList();
