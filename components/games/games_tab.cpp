@@ -32,6 +32,19 @@ static bool hasLoadedFavorites = false;
 static char renameBuffer[128] = "";
 static uint64_t renamingUniverseId = 0;
 
+enum class GameSortMode {
+    Relevance = 0,
+    PlayersDesc,
+    PlayersAsc,
+    NameAsc,
+    NameDesc
+};
+
+static GameSortMode currentSortMode = GameSortMode::Relevance;
+static int sortComboIndex = 0;
+
+static void SortGamesList();
+
 static void RenderGameSearch();
 
 static void RenderFavoritesList(float listWidth, float availableHeight);
@@ -40,10 +53,46 @@ static void RenderSearchResultsList(float listWidth, float availableHeight);
 
 static void RenderGameDetailsPanel(float panelWidth, float availableHeight);
 
+static void SortGamesList() {
+    switch (currentSortMode) {
+        case GameSortMode::PlayersDesc:
+            sort(gamesList.begin(), gamesList.end(), [](const GameInfo &a, const GameInfo &b) {
+                return a.playerCount > b.playerCount;
+            });
+            break;
+        case GameSortMode::PlayersAsc:
+            sort(gamesList.begin(), gamesList.end(), [](const GameInfo &a, const GameInfo &b) {
+                return a.playerCount < b.playerCount;
+            });
+            break;
+        case GameSortMode::NameAsc:
+            sort(gamesList.begin(), gamesList.end(), [](const GameInfo &a, const GameInfo &b) {
+                return a.name < b.name;
+            });
+            break;
+        case GameSortMode::NameDesc:
+            sort(gamesList.begin(), gamesList.end(), [](const GameInfo &a, const GameInfo &b) {
+                return a.name > b.name;
+            });
+            break;
+        case GameSortMode::Relevance:
+        default:
+            break;
+    }
+}
+
 static void RenderGameSearch() {
     ImGuiStyle &style = GetStyle();
+    const char *sortOptions[] = {
+        "Relevance",
+        "Players (High-Low)",
+        "Players (Low-High)",
+        "A-Z",
+        "Z-A"};
     float searchButtonWidth = CalcTextSize(" Search  \xEF\x80\x82 ").x + style.FramePadding.x * 2.0f;
-    float inputWidth = GetContentRegionAvail().x - searchButtonWidth - style.ItemSpacing.x;
+
+    float comboWidth = CalcTextSize("Players (Low-High)").x + style.FramePadding.x * 4.0f;
+    float inputWidth = GetContentRegionAvail().x - searchButtonWidth - comboWidth - style.ItemSpacing.x * 2;
     if (inputWidth < 100.0f)
         inputWidth = 100.0f;
     PushItemWidth(inputWidth);
@@ -56,8 +105,16 @@ static void RenderGameSearch() {
         erase_if(gamesList, [&](const GameInfo &g) {
             return favoriteGameIds.contains(g.universeId);
         });
+        SortGamesList();
         gameDetailCache.clear();
     }
+    SameLine(0, style.ItemSpacing.x);
+    PushItemWidth(comboWidth);
+    if (Combo(" Sort By", &sortComboIndex, sortOptions, IM_ARRAYSIZE(sortOptions))) {
+        currentSortMode = static_cast<GameSortMode>(sortComboIndex);
+        SortGamesList();
+    }
+    PopItemWidth();
 }
 
 static void RenderFavoritesList(float listWidth, float availableHeight) {
