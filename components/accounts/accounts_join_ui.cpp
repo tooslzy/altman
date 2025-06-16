@@ -73,13 +73,25 @@ void RenderJoinOptions() {
     Combo(" Join Type", &join_type_combo_index, join_types_local, IM_ARRAYSIZE(join_types_local));
 
     if (join_type_combo_index == 1) {
+        float w = GetContentRegionAvail().x;
+        if (w < 100.0f)
+            w = 100.0f;
+        PushItemWidth(w);
         InputTextWithHint("##JoinPlaceId", "Enter Place ID...", join_value_buf, IM_ARRAYSIZE(join_value_buf));
+        PopItemWidth();
+        PushItemWidth(w);
         InputTextWithHint("##JoinJobId", "Enter Job ID...", join_jobid_buf, IM_ARRAYSIZE(join_jobid_buf));
+        PopItemWidth();
     } else {
+        float w = GetContentRegionAvail().x;
+        if (w < 100.0f)
+            w = 100.0f;
+        PushItemWidth(w);
         InputTextWithHint("##JoinValue",
                           GetJoinHintLocal(join_type_combo_index),
                           join_value_buf,
                           IM_ARRAYSIZE(join_value_buf));
+        PopItemWidth();
     }
 
     Separator();

@@ -25,6 +25,7 @@
 using namespace ImGui;
 using namespace std;
 
+
 static vector<PublicServerInfo> s_cachedServers;
 static unordered_map<string, RobloxApi::ServerPage> g_pageCache;
 
@@ -86,9 +87,19 @@ void RenderServersTab() {
         g_targetPlaceId_ServersTab = 0;
     }
 
+    ImGuiStyle &style = GetStyle();
+    float fetchButtonWidth = CalcTextSize("Fetch Servers").x + style.FramePadding.x * 2.0f;
+    float prevButtonWidth = CalcTextSize("\xEF\x81\x93 Prev Page").x + style.FramePadding.x * 2.0f;
+    float nextButtonWidth = CalcTextSize("Next Page \xEF\x81\x94").x + style.FramePadding.x * 2.0f;
+    float buttons_total_width = fetchButtonWidth + prevButtonWidth + nextButtonWidth + style.ItemSpacing.x * 2;
+    float inputWidth = GetContentRegionAvail().x - buttons_total_width - style.ItemSpacing.x;
+    if (inputWidth < 100.0f)
+        inputWidth = 100.0f;
+    PushItemWidth(inputWidth);
     InputTextWithHint("##placeid_servers", "Place Id", s_placeIdBuffer, sizeof(s_placeIdBuffer));
-    SameLine();
-    if (Button("Fetch Servers")) {
+    PopItemWidth();
+    SameLine(0, style.ItemSpacing.x);
+    if (Button("Fetch Servers", ImVec2(fetchButtonWidth, 0))) {
         string raw_pid{s_placeIdBuffer};
         erase_if(raw_pid, ::isspace);
         if (raw_pid.empty() || !all_of(raw_pid.begin(), raw_pid.end(), ::isdigit)) {
@@ -106,19 +117,24 @@ void RenderServersTab() {
             }
         }
     }
-    SameLine();
+    SameLine(0, style.ItemSpacing.x);
     BeginDisabled(g_prevCursor_servers.empty());
-    if (Button("\xEF\x81\x93 Prev Page"))
+    if (Button("\xEF\x81\x93 Prev Page", ImVec2(prevButtonWidth, 0)))
         fetchPageServers(g_current_placeId_servers, g_prevCursor_servers);
     EndDisabled();
-    SameLine();
+    SameLine(0, style.ItemSpacing.x);
     BeginDisabled(g_nextCursor_servers.empty());
-    if (Button("Next Page \xEF\x81\x94"))
+    if (Button("Next Page \xEF\x81\x94", ImVec2(nextButtonWidth, 0)))
         fetchPageServers(g_current_placeId_servers, g_nextCursor_servers);
     EndDisabled();
 
     Separator();
+    float searchInputWidth = GetContentRegionAvail().x;
+    if (searchInputWidth < 100.0f)
+        searchInputWidth = 100.0f;
+    PushItemWidth(searchInputWidth);
     InputTextWithHint("##search_servers", "Search...", s_searchBuffer, sizeof(s_searchBuffer));
+    PopItemWidth();
 
     string qLower = toLower(s_searchBuffer);
     bool isSearching = !qLower.empty();

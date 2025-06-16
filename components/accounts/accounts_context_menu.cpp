@@ -325,15 +325,23 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
     }
     string popupName = "Custom URL##Acct" + to_string(account.id);
     if (BeginPopupModal(popupName.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGuiStyle &style = GetStyle();
+        float openWidth = CalcTextSize("Open").x + style.FramePadding.x * 2.0f;
+        float cancelWidth = CalcTextSize("Cancel").x + style.FramePadding.x * 2.0f;
+        float inputWidth = GetContentRegionAvail().x - openWidth - cancelWidth - style.ItemSpacing.x;
+        if (inputWidth < 100.0f)
+            inputWidth = 100.0f;
+        PushItemWidth(inputWidth);
         InputTextWithHint("##AcctUrl", "Enter URL", g_customUrlBuffer, sizeof(g_customUrlBuffer));
+        PopItemWidth();
         Spacing();
-        if (Button("Open") && g_customUrlBuffer[0] != '\0') {
+        if (Button("Open", ImVec2(openWidth, 0)) && g_customUrlBuffer[0] != '\0') {
             LaunchWebview(g_customUrlBuffer, account.username + " - " + account.userId, account.cookie);
             g_customUrlBuffer[0] = '\0';
             CloseCurrentPopup();
         }
-        SameLine();
-        if (Button("Cancel")) {
+        SameLine(0, style.ItemSpacing.x);
+        if (Button("Cancel", ImVec2(cancelWidth, 0))) {
             g_customUrlBuffer[0] = '\0';
             CloseCurrentPopup();
         }
