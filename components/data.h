@@ -8,6 +8,7 @@
 #include <ctime>
 #include <unordered_map>
 #include <imgui.h>
+#include "history/log_types.h"
 
 struct AccountData {
     int id = 0;
@@ -68,6 +69,9 @@ namespace Data {
     void LoadFriends(const std::string &filename = "friends.json");
 
     void SaveFriends(const std::string &filename = "friends.json");
+
+    std::vector<LogInfo> LoadLogHistory(const std::string &filename = "log_history.json");
+    void SaveLogHistory(const std::vector<LogInfo> &logs, const std::string &filename = "log_history.json");
 }
 
 #endif
