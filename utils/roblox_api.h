@@ -219,6 +219,7 @@ namespace RobloxApi {
                 s.maximumPlayers = e.value("maxPlayers", 0);
                 s.averagePing = e.value("ping", 0.0);
                 s.averageFps = e.value("fps", 0.0);
+                s.region = e.value("regionCode", "");
                 page.data.push_back(move(s));
             }
         }

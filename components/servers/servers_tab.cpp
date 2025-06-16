@@ -25,6 +25,18 @@
 using namespace ImGui;
 using namespace std;
 
+enum class ServerSortMode {
+    None = 0,
+    PingAsc,
+    PingDesc,
+    PlayersAsc,
+    PlayersDesc,
+    RegionAsc,
+    RegionDesc
+};
+
+static ServerSortMode g_serverSortMode = ServerSortMode::None;
+static int g_serverSortComboIndex = 0;
 
 static vector<PublicServerInfo> s_cachedServers;
 static unordered_map<string, RobloxApi::ServerPage> g_pageCache;
@@ -41,7 +53,7 @@ static uint64_t g_current_placeId_servers = 0;
 static bool matchesQuery(const PublicServerInfo &srv, const string &qLower) {
     string alias = guidToName(srv.jobId);
     string hay = alias + ' ' + srv.jobId + ' ' + to_string(srv.currentPlayers) + '/' + to_string(srv.maximumPlayers) +
-                 ' ' +
+                 ' ' + srv.region + ' ' +
                  to_string(static_cast<int>(srv.averagePing + 0.5)) + "ms " + to_string(
                      static_cast<int>(srv.averageFps + 0.5));
     string lowerHay = toLower(hay);
@@ -129,11 +141,27 @@ void RenderServersTab() {
     EndDisabled();
 
     Separator();
-    float searchInputWidth = GetContentRegionAvail().x;
+    const char *sortOptions[] = {
+        "None",
+        "Ping (Asc)",
+        "Ping (Desc)",
+        "Players (Asc)",
+        "Players (Desc)",
+        "Region (A-Z)",
+        "Region (Z-A)"};
+
+    float comboWidth = CalcTextSize("Region (Z-A)").x + style.FramePadding.x * 4.0f;
+    float searchInputWidth = GetContentRegionAvail().x - comboWidth - style.ItemSpacing.x;
     if (searchInputWidth < 100.0f)
         searchInputWidth = 100.0f;
     PushItemWidth(searchInputWidth);
     InputTextWithHint("##search_servers", "Search...", s_searchBuffer, sizeof(s_searchBuffer));
+    PopItemWidth();
+    SameLine(0, style.ItemSpacing.x);
+    PushItemWidth(comboWidth);
+    if (Combo("##server_filter", &g_serverSortComboIndex, sortOptions, IM_ARRAYSIZE(sortOptions))) {
+        g_serverSortMode = static_cast<ServerSortMode>(g_serverSortComboIndex);
+    }
     PopItemWidth();
 
     string qLower = toLower(s_searchBuffer);
@@ -146,14 +174,57 @@ void RenderServersTab() {
                     displayList.push_back(srv);
             }
         }
-        sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
-            return guidToName(a.jobId) < guidToName(b.jobId);
-        });
     } else {
         displayList = s_cachedServers;
     }
 
-    constexpr int columnCount = 5;
+    auto sortServers = [&](ServerSortMode mode) {
+        switch (mode) {
+            case ServerSortMode::PingAsc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.averagePing < b.averagePing;
+                });
+                break;
+            case ServerSortMode::PingDesc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.averagePing > b.averagePing;
+                });
+                break;
+            case ServerSortMode::PlayersAsc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.currentPlayers < b.currentPlayers;
+                });
+                break;
+            case ServerSortMode::PlayersDesc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.currentPlayers > b.currentPlayers;
+                });
+                break;
+            case ServerSortMode::RegionAsc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.region < b.region;
+                });
+                break;
+            case ServerSortMode::RegionDesc:
+                sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+                    return a.region > b.region;
+                });
+                break;
+            case ServerSortMode::None:
+            default:
+                break;
+        }
+    };
+
+    if (g_serverSortMode == ServerSortMode::None && isSearching) {
+        sort(displayList.begin(), displayList.end(), [](const PublicServerInfo &a, const PublicServerInfo &b) {
+            return guidToName(a.jobId) < guidToName(b.jobId);
+        });
+    } else {
+        sortServers(g_serverSortMode);
+    }
+
+    constexpr int columnCount = 6;
     ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
                                   ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable;
 
@@ -162,6 +233,7 @@ void RenderServersTab() {
         TableSetupColumn("Job ID", ImGuiTableColumnFlags_WidthStretch);
         TableSetupColumn("Players", ImGuiTableColumnFlags_WidthFixed, 80.0f);
         TableSetupColumn("Ping", ImGuiTableColumnFlags_WidthFixed, 70.0f);
+        TableSetupColumn("Region", ImGuiTableColumnFlags_WidthFixed, 80.0f);
         TableSetupColumn("FPS", ImGuiTableColumnFlags_WidthFixed, 70.0f);
         TableSetupScrollFreeze(0, 1);
         TableNextRow(ImGuiTableRowFlags_Headers);
@@ -173,6 +245,8 @@ void RenderServersTab() {
         TextUnformatted("Players");
         TableNextColumn();
         TextUnformatted("Ping");
+        TableNextColumn();
+        TextUnformatted("Region");
         TableNextColumn();
         TextUnformatted("FPS");
 
@@ -308,10 +382,16 @@ void RenderServersTab() {
             TableNextColumn();
             float cell5_start_y = GetCursorPosY();
             SetCursorPosY(cell5_start_y + vertical_padding);
+            TextUnformatted(srv.region.c_str());
+            SetCursorPosY(cell5_start_y + row_interaction_height);
+
+            TableNextColumn();
+            float cell6_start_y = GetCursorPosY();
+            SetCursorPosY(cell6_start_y + vertical_padding);
             char fpsBuf[16];
             snprintf(fpsBuf, sizeof(fpsBuf), "%.0f", srv.averageFps);
             TextUnformatted(fpsBuf);
-            SetCursorPosY(cell5_start_y + row_interaction_height);
+            SetCursorPosY(cell6_start_y + row_interaction_height);
 
             PopID();
         }
