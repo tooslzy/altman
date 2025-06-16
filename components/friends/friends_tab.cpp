@@ -110,13 +110,20 @@ void RenderFriendsTab() {
         s_openAddFriendPopup = false;
     }
     if (BeginPopupModal("Add Friend", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        float inputW = GetContentRegionAvail().x;
+        if (inputW < 100.0f)
+            inputW = 100.0f;
+        PushItemWidth(inputW);
         InputTextWithHint("##AddFriendUser", "Username or ID", s_addFriendBuffer, sizeof(s_addFriendBuffer));
+        PopItemWidth();
         if (s_addFriendLoading.load()) {
             SameLine();
             TextUnformatted("Sending...");
         }
         Spacing();
-        if (Button("Send") && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
+        float sendWidth = CalcTextSize("Send").x + GetStyle().FramePadding.x * 2.0f;
+        float cancelWidth = CalcTextSize("Cancel").x + GetStyle().FramePadding.x * 2.0f;
+        if (Button("Send", ImVec2(sendWidth, 0)) && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
             string input = trim_copy(s_addFriendBuffer);
             s_addFriendLoading = true;
             Threading::newThread([input, cookie = acct.cookie]() {
@@ -146,8 +153,8 @@ void RenderFriendsTab() {
             s_addFriendBuffer[0] = '\0';
             CloseCurrentPopup();
         }
-        SameLine();
-        if (Button("Cancel") && !s_addFriendLoading.load()) {
+        SameLine(0, GetStyle().ItemSpacing.x);
+        if (Button("Cancel", ImVec2(cancelWidth, 0)) && !s_addFriendLoading.load()) {
             s_addFriendBuffer[0] = '\0';
             CloseCurrentPopup();
         }

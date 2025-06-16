@@ -129,7 +129,12 @@ void RenderServersTab() {
     EndDisabled();
 
     Separator();
+    float searchInputWidth = GetContentRegionAvail().x;
+    if (searchInputWidth < 100.0f)
+        searchInputWidth = 100.0f;
+    PushItemWidth(searchInputWidth);
     InputTextWithHint("##search_servers", "Search...", s_searchBuffer, sizeof(s_searchBuffer));
+    PopItemWidth();
 
     string qLower = toLower(s_searchBuffer);
     bool isSearching = !qLower.empty();

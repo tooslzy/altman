@@ -41,9 +41,16 @@ static void RenderSearchResultsList(float listWidth, float availableHeight);
 static void RenderGameDetailsPanel(float panelWidth, float availableHeight);
 
 static void RenderGameSearch() {
+    ImGuiStyle &style = GetStyle();
+    float searchButtonWidth = CalcTextSize(" Search  \xEF\x80\x82 ").x + style.FramePadding.x * 2.0f;
+    float inputWidth = GetContentRegionAvail().x - searchButtonWidth - style.ItemSpacing.x;
+    if (inputWidth < 100.0f)
+        inputWidth = 100.0f;
+    PushItemWidth(inputWidth);
     InputTextWithHint("##game_search", "Search games", searchBuffer, sizeof(searchBuffer));
-    SameLine();
-    if (Button(" Search  \xEF\x80\x82 ") && searchBuffer[0] != '\0') {
+    PopItemWidth();
+    SameLine(0, style.ItemSpacing.x);
+    if (Button(" Search  \xEF\x80\x82 ", ImVec2(searchButtonWidth, 0)) && searchBuffer[0] != '\0') {
         selectedIndex = -1;
         gamesList = RobloxApi::searchGames(searchBuffer);
         erase_if(gamesList, [&](const GameInfo &g) {
@@ -95,9 +102,17 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                         renamingUniverseId = game.universeId;
                     }
 
+                    ImGuiStyle &style = GetStyle();
+                    float saveWidth = CalcTextSize("Save##RenameFavorite").x + style.FramePadding.x * 2.0f;
+                    float cancelWidth = CalcTextSize("Cancel##RenameFavorite").x + style.FramePadding.x * 2.0f;
+                    float inputWidth = GetContentRegionAvail().x - saveWidth - cancelWidth - style.ItemSpacing.x;
+                    if (inputWidth < 100.0f)
+                        inputWidth = 100.0f;
+                    PushItemWidth(inputWidth);
                     InputText("##RenameFavorite", renameBuffer, sizeof(renameBuffer));
+                    PopItemWidth();
 
-                    if (Button("Save##RenameFavorite")) {
+                    if (Button("Save##RenameFavorite", ImVec2(saveWidth, 0))) {
                         if (renamingUniverseId == game.universeId) {
                             favoriteGamesList[index].name = renameBuffer;
                             for (auto &f: g_favorites) {
@@ -111,8 +126,8 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                         renamingUniverseId = 0;
                         CloseCurrentPopup();
                     }
-                    SameLine();
-                    if (Button("Cancel##RenameFavorite")) {
+                    SameLine(0, style.ItemSpacing.x);
+                    if (Button("Cancel##RenameFavorite", ImVec2(cancelWidth, 0))) {
                         renamingUniverseId = 0;
                         CloseCurrentPopup();
                     }

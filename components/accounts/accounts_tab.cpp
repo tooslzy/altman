@@ -230,9 +230,17 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
         s_openUrlPopup = false;
     }
     if (BeginPopupModal("Open URL", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGuiStyle &style = GetStyle();
+        float openWidth = CalcTextSize("Open").x + style.FramePadding.x * 2.0f;
+        float cancelWidth = CalcTextSize("Cancel").x + style.FramePadding.x * 2.0f;
+        float inputWidth = GetContentRegionAvail().x - openWidth - cancelWidth - style.ItemSpacing.x;
+        if (inputWidth < 100.0f)
+            inputWidth = 100.0f;
+        PushItemWidth(inputWidth);
         InputTextWithHint("##WebviewUrl", "Enter URL", s_urlBuffer, sizeof(s_urlBuffer));
+        PopItemWidth();
         Spacing();
-        if (Button("Open") && s_urlBuffer[0] != '\0') {
+        if (Button("Open", ImVec2(openWidth, 0)) && s_urlBuffer[0] != '\0') {
             auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
                 return a.id == s_urlPopupAccountId;
             });
@@ -245,8 +253,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
             s_urlBuffer[0] = '\0';
             CloseCurrentPopup();
         }
-        SameLine();
-        if (Button("Cancel")) {
+        SameLine(0, style.ItemSpacing.x);
+        if (Button("Cancel", ImVec2(cancelWidth, 0))) {
             s_urlBuffer[0] = '\0';
             CloseCurrentPopup();
         }
