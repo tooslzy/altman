@@ -240,7 +240,8 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
             TableSetupColumn("##label", ImGuiTableColumnFlags_WidthFixed, 140.f);
             TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
 
-            auto addRow = [&](const char *label, const string &valueString) {
+            auto addRow = [&](const char *label, const string &valueString,
+                              const ImVec4 *color = nullptr) {
                 TableNextRow();
                 TableSetColumnIndex(0);
                 Indent(desiredTextIndent);
@@ -253,7 +254,11 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 Indent(desiredTextIndent);
                 Spacing();
                 PushID(label);
+                if (color)
+                    PushStyleColor(ImGuiCol_Text, *color);
                 TextWrapped("%s", valueString.c_str());
+                if (color)
+                    PopStyleColor();
                 if (BeginPopupContextItem("CopyGameValue")) {
                     if (MenuItem("Copy")) {
                         SetClipboardText(valueString.c_str());
@@ -268,7 +273,11 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
             addRow("Name:", gameInfo.name);
             addRow("Place ID:", to_string(gameInfo.placeId));
             addRow("Universe ID:", to_string(gameInfo.universeId));
-            addRow("Creator:", detailInfo.creatorName + string(detailInfo.creatorVerified ? " \xEF\x80\x8C" : ""));
+            const ImVec4 verifiedColor = ImVec4(0.031f, 0.392f, 0.988f, 1.f); // #0864fc
+            addRow("Creator:",
+                   detailInfo.creatorName +
+                       string(detailInfo.creatorVerified ? " \xEF\x80\x8C" : ""),
+                   detailInfo.creatorVerified ? &verifiedColor : nullptr);
             addRow("Players:", formatWithCommas(gameInfo.playerCount));
             addRow("Max Players:", formatWithCommas(detailInfo.maxPlayers));
             addRow("Visits:", formatWithCommas(detailInfo.visits));
