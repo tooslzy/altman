@@ -16,6 +16,7 @@
 - **Friends List** - View friends list for each saved account
 - **Add Friends** - Send friend requests right from the Friends tab
 - **Server Browser** - Browse active servers for any Roblox game
+- **Enhanced Server Filtering** - Filter servers by ping or player count
 - **Game Search** - Search and discover Roblox games
 - **Log Parser** - Converts Roblox log files into human-readable format
 ---
