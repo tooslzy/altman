@@ -107,12 +107,13 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 
             static std::unordered_map<int, double> holdStartTimes;
             if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
-                holdStartTimes[account.id] = ImGui::GetTime();
+                holdStartTimes[account.id] = GetTime();
             }
+
             bool holdTriggered = false;
             if (IsItemActive()) {
                 auto it = holdStartTimes.find(account.id);
-                if (it != holdStartTimes.end() && (ImGui::GetTime() - it->second) >= 0.65f) {
+                if (it != holdStartTimes.end() && (GetTime() - it->second) >= 0.65f) {
                     holdStartTimes.erase(it);
                     holdTriggered = true;
                 }
