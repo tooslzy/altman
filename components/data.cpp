@@ -333,4 +333,69 @@ namespace Data {
         out << j.dump(4);
         LOG_INFO("Saved friend data for " + std::to_string(g_accountFriends.size()) + " accounts");
     }
+
+    std::vector<LogInfo> LoadLogHistory(const std::string &filename) {
+        std::ifstream fin{filename};
+        std::vector<LogInfo> logs;
+        if (!fin.is_open()) {
+            LOG_INFO("No " + filename + ", starting with empty log history");
+            return logs;
+        }
+
+        try {
+            json arr; fin >> arr;
+            for (auto &j : arr) {
+                LogInfo info;
+                info.fileName = j.value("fileName", "");
+                info.fullPath = j.value("fullPath", "");
+                info.timestamp = j.value("timestamp", "");
+                info.version = j.value("version", "");
+                info.channel = j.value("channel", "");
+                info.joinTime = j.value("joinTime", "");
+                info.jobId = j.value("jobId", "");
+                info.placeId = j.value("placeId", "");
+                info.universeId = j.value("universeId", "");
+                info.serverIp = j.value("serverIp", "");
+                info.serverPort = j.value("serverPort", "");
+                info.userId = j.value("userId", "");
+                info.outputLines = j.value("outputLines", std::vector<std::string>{});
+                logs.push_back(std::move(info));
+            }
+            LOG_INFO("Loaded " + std::to_string(logs.size()) + " log entries");
+        } catch (const std::exception &e) {
+            LOG_ERROR("Failed to parse " + filename + ": " + e.what());
+        }
+
+        return logs;
+    }
+
+    void SaveLogHistory(const std::vector<LogInfo> &logs, const std::string &filename) {
+        std::ofstream out{filename};
+        if (!out.is_open()) {
+            LOG_ERROR("Could not open '" + filename + "' for writing");
+            return;
+        }
+
+        json arr = json::array();
+        for (const auto &log : logs) {
+            arr.push_back({
+                {"fileName", log.fileName},
+                {"fullPath", log.fullPath},
+                {"timestamp", log.timestamp},
+                {"version", log.version},
+                {"channel", log.channel},
+                {"joinTime", log.joinTime},
+                {"jobId", log.jobId},
+                {"placeId", log.placeId},
+                {"universeId", log.universeId},
+                {"serverIp", log.serverIp},
+                {"serverPort", log.serverPort},
+                {"userId", log.userId},
+                {"outputLines", log.outputLines}
+            });
+        }
+
+        out << arr.dump(4);
+        LOG_INFO("Saved " + std::to_string(logs.size()) + " log entries");
+    }
 }

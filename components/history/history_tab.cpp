@@ -56,6 +56,7 @@ static void clearLogs() {
         lock_guard<mutex> lk(g_logs_mtx);
         g_logs.clear();
         g_selected_log_idx = -1;
+        Data::SaveLogHistory(g_logs);
     }
 }
 
@@ -89,8 +90,16 @@ static void refreshLogs() {
             return b.timestamp < a.timestamp;
         }); {
             lock_guard<mutex> lk(g_logs_mtx);
-            g_logs = move(tempLogs);
+            for (auto &log : tempLogs) {
+                auto it = find_if(g_logs.begin(), g_logs.end(), [&](const LogInfo &a) { return a.fileName == log.fileName; });
+                if (it == g_logs.end())
+                    g_logs.push_back(log);
+            }
+            sort(g_logs.begin(), g_logs.end(), [](const LogInfo &a, const LogInfo &b) {
+                return b.timestamp < a.timestamp;
+            });
             g_selected_log_idx = -1;
+            Data::SaveLogHistory(g_logs);
         }
 
         LOG_INFO("Log scan complete.");
@@ -132,16 +141,25 @@ static void workerScan() {
 
     if (!tempLogs.empty()) {
         lock_guard<mutex> lk(g_logs_mtx);
-        g_logs.insert(g_logs.end(), tempLogs.begin(), tempLogs.end());
+        for (auto &log : tempLogs) {
+            auto it = find_if(g_logs.begin(), g_logs.end(), [&](const LogInfo &a) { return a.fileName == log.fileName; });
+            if (it == g_logs.end())
+                g_logs.push_back(log);
+        }
         sort(g_logs.begin(), g_logs.end(), [](const LogInfo &a, const LogInfo &b) {
             return b.timestamp < a.timestamp;
         });
+        Data::SaveLogHistory(g_logs);
     }
 
     refreshLogs();
 }
 
 static void startLogWatcher() {
+    {
+        lock_guard<mutex> lk(g_logs_mtx);
+        g_logs = Data::LoadLogHistory();
+    }
     refreshLogs();
 }
 
