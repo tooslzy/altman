@@ -90,8 +90,10 @@ static void refreshLogs() {
             return b.timestamp < a.timestamp;
         }); {
             lock_guard<mutex> lk(g_logs_mtx);
-            for (auto &log : tempLogs) {
-                auto it = find_if(g_logs.begin(), g_logs.end(), [&](const LogInfo &a) { return a.fileName == log.fileName; });
+            for (auto &log: tempLogs) {
+                auto it = find_if(g_logs.begin(), g_logs.end(), [&](const LogInfo &a) {
+                    return a.fileName == log.fileName;
+                });
                 if (it == g_logs.end())
                     g_logs.push_back(log);
             }
@@ -141,8 +143,9 @@ static void workerScan() {
 
     if (!tempLogs.empty()) {
         lock_guard<mutex> lk(g_logs_mtx);
-        for (auto &log : tempLogs) {
-            auto it = find_if(g_logs.begin(), g_logs.end(), [&](const LogInfo &a) { return a.fileName == log.fileName; });
+        for (auto &log: tempLogs) {
+            auto it = find_if(g_logs.begin(), g_logs.end(),
+                              [&](const LogInfo &a) { return a.fileName == log.fileName; });
             if (it == g_logs.end())
                 g_logs.push_back(log);
         }
@@ -155,8 +158,7 @@ static void workerScan() {
     refreshLogs();
 }
 
-static void startLogWatcher() {
-    {
+static void startLogWatcher() { {
         lock_guard<mutex> lk(g_logs_mtx);
         g_logs = Data::LoadLogHistory();
     }

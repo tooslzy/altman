@@ -144,7 +144,8 @@ void RenderServersTab() {
         "Ping (Asc)",
         "Ping (Desc)",
         "Players (Asc)",
-        "Players (Desc)"};
+        "Players (Desc)"
+    };
 
     float comboWidth = CalcTextSize("Players (Desc)").x + style.FramePadding.x * 7.0f;
     float searchInputWidth = GetContentRegionAvail().x - comboWidth - style.ItemSpacing.x;

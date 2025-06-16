@@ -128,7 +128,7 @@ int WINAPI WinMain(
     auto refreshAccounts = [] {
         std::vector<int> invalidIds;
         std::string names;
-        for (auto &acct : g_accounts) {
+        for (auto &acct: g_accounts) {
             if (acct.cookie.empty())
                 continue;
             auto banStatus = RobloxApi::checkBanStatus(acct.cookie);
@@ -153,7 +153,8 @@ int WINAPI WinMain(
                     acct.voiceBanExpiry = vs.bannedUntil;
                 } catch (const std::exception &e) {
                     char errorMsg[256];
-                    snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(), e.what());
+                    snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(),
+                             e.what());
                     LOG_ERROR(errorMsg);
                     acct.status = "Error: Invalid UserID";
                 }
@@ -171,7 +172,7 @@ int WINAPI WinMain(
                     erase_if(g_accounts, [&](const AccountData &a) {
                         return std::find(invalidIds.begin(), invalidIds.end(), a.id) != invalidIds.end();
                     });
-                    for (int id : invalidIds) {
+                    for (int id: invalidIds) {
                         g_selectedAccountIds.erase(id);
                     }
                     Data::SaveAccounts();

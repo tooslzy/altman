@@ -91,7 +91,8 @@ static void RenderGameSearch() {
         "Players (Asc)",
         "Players (Desc)",
         "A-Z",
-        "Z-A"};
+        "Z-A"
+    };
 
     float searchButtonWidth = CalcTextSize(" Search  \xEF\x80\x82 ").x + style.FramePadding.x * 2.0f;
 
@@ -352,7 +353,7 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
             const ImVec4 verifiedColor = ImVec4(0.031f, 0.392f, 0.988f, 1.f); // #0864fc
             addRow("Creator:",
                    detailInfo.creatorName +
-                       string(detailInfo.creatorVerified ? " \xEF\x80\x8C" : ""),
+                   string(detailInfo.creatorVerified ? " \xEF\x80\x8C" : ""),
                    detailInfo.creatorVerified ? &verifiedColor : nullptr);
             addRow("Players:", formatWithCommas(gameInfo.playerCount));
             addRow("Max Players:", formatWithCommas(detailInfo.maxPlayers));
@@ -418,8 +419,8 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
         Indent(desiredTextIndent / 2);
         if (Button("Launch Game")) {
             if (!g_selectedAccountIds.empty()) {
-                vector<pair<int, string>> accounts;
-                for (int id : g_selectedAccountIds) {
+                vector<pair<int, string> > accounts;
+                for (int id: g_selectedAccountIds) {
                     auto it = find_if(g_accounts.begin(), g_accounts.end(),
                                       [&](const AccountData &a) { return a.id == id; });
                     if (it != g_accounts.end())
@@ -427,9 +428,9 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 }
                 if (!accounts.empty()) {
                     thread([placeId = gameInfo.placeId, accounts]() {
-                              launchRobloxSequential(placeId, "", accounts);
-                          })
-                        .detach();
+                                launchRobloxSequential(placeId, "", accounts);
+                            })
+                            .detach();
                 } else {
                     Status::Error("Selected account not found to launch game.");
                 }

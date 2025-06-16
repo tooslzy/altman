@@ -197,7 +197,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
                         auto vs = RobloxApi::getVoiceChatStatus(cookie);
                         MainThread::Post([accId, vs]() {
                             auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                                             [&](const AccountData &a) { return a.id == accId; });
+                                              [&](const AccountData &a) { return a.id == accId; });
                             if (it != g_accounts.end()) {
                                 it->voiceStatus = vs.status;
                                 it->voiceBanExpiry = vs.bannedUntil;
