@@ -32,6 +32,9 @@ using namespace std;
 
 static int g_selected_log_idx = -1;
 
+static auto ICON_REFRESH = "\xEF\x8B\xB1 ";
+static auto ICON_TRASH = "\xEF\x87\xB8 ";
+
 static vector<LogInfo> g_logs;
 static atomic_bool g_logs_loading{false};
 static atomic_bool g_stop_log_watcher{false};
@@ -217,11 +220,11 @@ static void DisplayLogDetails(const LogInfo &logInfo) {
 void RenderHistoryTab() {
     call_once(g_start_log_watcher_once, startLogWatcher);
 
-    if (Button("Refresh Logs")) {
+    if (Button((string(ICON_REFRESH) + "Refresh Logs").c_str())) {
         refreshLogs();
     }
     SameLine();
-    if (Button("Clear Logs")) {
+    if (Button((string(ICON_TRASH) + "Clear Logs").c_str())) {
         ConfirmPopup::Add("Clear all logs?", []() { clearLogs(); });
     }
     SameLine();
