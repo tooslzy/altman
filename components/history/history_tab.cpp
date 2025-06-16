@@ -260,7 +260,6 @@ void RenderHistoryTab() {
                 Indent();
                 indented = true;
                 lastDay = thisDay;
-                lastVersion = thisVersion;
             }
 
             PushID(i);

@@ -88,10 +88,11 @@ static void RenderGameSearch() {
     ImGuiStyle &style = GetStyle();
     const char *sortOptions[] = {
         "Relevance",
-        "Players (High-Low)",
-        "Players (Low-High)",
+        "Players (Asc)",
+        "Players (Desc)",
         "A-Z",
         "Z-A"};
+
     float searchButtonWidth = CalcTextSize(" Search  \xEF\x80\x82 ").x + style.FramePadding.x * 2.0f;
 
     float comboWidth = CalcTextSize("Players (Low-High)").x + style.FramePadding.x * 4.0f;
