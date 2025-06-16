@@ -25,6 +25,16 @@
 using namespace ImGui;
 using namespace std;
 
+static inline void SameLineIfRoom(float upcomingWidth) {
+    float avail = ImGui::GetContentRegionAvail().x;
+    if (avail > upcomingWidth + ImGui::GetStyle().ItemSpacing.x)
+        ImGui::SameLine();
+}
+
+static inline float ButtonWidth(const char *label) {
+    return ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f;
+}
+
 static vector<PublicServerInfo> s_cachedServers;
 static unordered_map<string, RobloxApi::ServerPage> g_pageCache;
 
@@ -87,7 +97,7 @@ void RenderServersTab() {
     }
 
     InputTextWithHint("##placeid_servers", "Place Id", s_placeIdBuffer, sizeof(s_placeIdBuffer));
-    SameLine();
+    SameLineIfRoom(ButtonWidth("Fetch Servers"));
     if (Button("Fetch Servers")) {
         string raw_pid{s_placeIdBuffer};
         erase_if(raw_pid, ::isspace);
@@ -106,12 +116,12 @@ void RenderServersTab() {
             }
         }
     }
-    SameLine();
+    SameLineIfRoom(ButtonWidth("\xEF\x81\x93 Prev Page"));
     BeginDisabled(g_prevCursor_servers.empty());
     if (Button("\xEF\x81\x93 Prev Page"))
         fetchPageServers(g_current_placeId_servers, g_prevCursor_servers);
     EndDisabled();
-    SameLine();
+    SameLineIfRoom(ButtonWidth("Next Page \xEF\x81\x94"));
     BeginDisabled(g_nextCursor_servers.empty());
     if (Button("Next Page \xEF\x81\x94"))
         fetchPageServers(g_current_placeId_servers, g_nextCursor_servers);
