@@ -77,6 +77,11 @@ static string presenceTypeToString(int type) {
 }
 
 namespace RobloxApi {
+    enum class BanCheckResult {
+        InvalidCookie,
+        Unbanned,
+        Banned
+    };
     static vector<FriendInfo> getFriends(const string &userId, const string &cookie) {
         LOG_INFO("Fetching friends list");
 
@@ -279,13 +284,27 @@ namespace RobloxApi {
         return HttpClient::decode(response);
     }
 
-    static bool isCookieValid(const string &cookie) {
-        try {
-            getAuthenticatedUser(cookie);
-            return true;
-        } catch (...) {
-            return false;
+    static BanCheckResult checkBanStatus(const string &cookie) {
+        LOG_INFO("Checking moderation status");
+        HttpClient::Response response = HttpClient::get(
+            "https://usermoderation.roblox.com/v1/not-approved",
+            {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+
+        if (response.status_code != 200) {
+            LOG_ERROR("Failed moderation check: HTTP " + to_string(response.status_code));
+            return BanCheckResult::InvalidCookie;
         }
+
+        auto j = HttpClient::decode(response);
+        if (j.is_object() && j.contains("punishmentTypeDescription"))
+            return BanCheckResult::Banned;
+        if (j.empty())
+            return BanCheckResult::Unbanned;
+        return BanCheckResult::Unbanned;
+    }
+
+    static bool isCookieValid(const string &cookie) {
+        return checkBanStatus(cookie) != BanCheckResult::InvalidCookie;
     }
 
     static string fetchAuthTicket(const string &cookie) {
