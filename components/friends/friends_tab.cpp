@@ -93,14 +93,14 @@ void RenderFriendsTab() {
     }
 
     BeginDisabled(g_friendsLoading.load());
-    if (Button((string(ICON_REFRESH) + "Refresh").c_str()) && !acct.userId.empty()) {
+    if (Button((string(ICON_REFRESH) + " Refresh").c_str()) && !acct.userId.empty()) {
         g_selectedFriendIdx = -1;
         g_selectedFriend = {};
         Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie, ref(g_friends),
                              ref(g_friendsLoading));
     }
     SameLine();
-    if (Button((string(ICON_USER_PLUS) + "Add Friend").c_str())) {
+    if (Button((string(ICON_USER_PLUS) + " Add Friend").c_str())) {
         s_openAddFriendPopup = true;
     }
     EndDisabled();

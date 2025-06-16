@@ -220,11 +220,11 @@ static void DisplayLogDetails(const LogInfo &logInfo) {
 void RenderHistoryTab() {
     call_once(g_start_log_watcher_once, startLogWatcher);
 
-    if (Button((string(ICON_REFRESH) + "Refresh Logs").c_str())) {
+    if (Button((string(ICON_REFRESH) + " Refresh Logs").c_str())) {
         refreshLogs();
     }
     SameLine();
-    if (Button((string(ICON_TRASH) + "Clear Logs").c_str())) {
+    if (Button((string(ICON_TRASH) + " Clear Logs").c_str())) {
         ConfirmPopup::Add("Clear all logs?", []() { clearLogs(); });
     }
     SameLine();
