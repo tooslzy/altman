@@ -251,21 +251,16 @@ void RenderHistoryTab() {
             const auto &logInfo = g_logs[i];
 
             string thisDay = logInfo.timestamp.size() >= 10 ? logInfo.timestamp.substr(0, 10) : "Unknown";
-            string thisVersion = logInfo.version.empty() ? "" : logInfo.version;
 
-            if (thisDay != lastDay || thisVersion != lastVersion) {
+            if (thisDay != lastDay) {
                 if (indented)
                     Unindent();
                 string header = thisDay;
-                if (!thisVersion.empty())
-                    header += "  v" + thisVersion;
-                else
-                    header += "  Unknown Version";
+
                 SeparatorText(header.c_str());
                 Indent();
                 indented = true;
                 lastDay = thisDay;
-                lastVersion = thisVersion;
             }
 
             PushID(i);
