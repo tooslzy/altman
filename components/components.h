@@ -14,7 +14,6 @@ struct PublicServerInfo {
     int maximumPlayers = 0;
     double averagePing = 0.0;
     double averageFps = 0.0;
-    std::string region;
 };
 
 struct GameInfo {
