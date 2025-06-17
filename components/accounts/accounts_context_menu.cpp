@@ -42,6 +42,7 @@ struct CachedGameInfo {
     uint64_t placeId = 0;
     std::string jobId;
 };
+
 static std::unordered_map<int, CachedGameInfo> g_cachedGameInfo;
 
 using namespace ImGui;
@@ -118,34 +119,6 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
 
         Separator();
 
-        if (MenuItem("Copy UserID")) {
-            SetClipboardText(account.userId.c_str());
-            LOG_INFO("Copied UserID for account: " + account.displayName);
-        }
-        if (MenuItem("Copy Cookie")) {
-            if (!account.cookie.empty()) {
-                SetClipboardText(account.cookie.c_str());
-                LOG_INFO("Copied cookie for account: " + account.displayName);
-            } else {
-                printf("Info: Cookie for account ID %d (%s) is empty.\n", account.id, account.displayName.c_str());
-                LOG_WARN(
-                    "Attempted to copy empty cookie for account: " + account.displayName + " (ID: " + to_string(account.
-                        id) + ")");
-                SetClipboardText("");
-            }
-        }
-        if (MenuItem("Copy Display Name")) {
-            SetClipboardText(account.displayName.c_str());
-            LOG_INFO("Copied Display Name for account: " + account.displayName);
-        }
-        if (MenuItem("Copy Username")) {
-            SetClipboardText(account.username.c_str());
-            LOG_INFO("Copied Username for account: " + account.displayName);
-        }
-        if (MenuItem("Copy Note")) {
-            SetClipboardText(account.note.c_str());
-            LOG_INFO("Copied Note for account: " + account.displayName);
-        }
 
         if (account.status == "InGame") {
             uint64_t placeId = 0;
@@ -181,8 +154,6 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                 Separator();
             }
         }
-
-        Separator();
 
         if (BeginMenu("Open In Browser")) {
             if (MenuItem("Home Page")) {
@@ -272,6 +243,37 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                 });
         }
 
+
+        Separator();
+
+        if (MenuItem("Copy UserID")) {
+            SetClipboardText(account.userId.c_str());
+            LOG_INFO("Copied UserID for account: " + account.displayName);
+        }
+        if (MenuItem("Copy Cookie")) {
+            if (!account.cookie.empty()) {
+                SetClipboardText(account.cookie.c_str());
+                LOG_INFO("Copied cookie for account: " + account.displayName);
+            } else {
+                printf("Info: Cookie for account ID %d (%s) is empty.\n", account.id, account.displayName.c_str());
+                LOG_WARN(
+                    "Attempted to copy empty cookie for account: " + account.displayName + " (ID: " + to_string(account.
+                        id) + ")");
+                SetClipboardText("");
+            }
+        }
+        if (MenuItem("Copy Display Name")) {
+            SetClipboardText(account.displayName.c_str());
+            LOG_INFO("Copied Display Name for account: " + account.displayName);
+        }
+        if (MenuItem("Copy Username")) {
+            SetClipboardText(account.username.c_str());
+            LOG_INFO("Copied Username for account: " + account.displayName);
+        }
+        if (MenuItem("Copy Note")) {
+            SetClipboardText(account.note.c_str());
+            LOG_INFO("Copied Note for account: " + account.displayName);
+        }
 
         Separator();
 
