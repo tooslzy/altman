@@ -14,14 +14,14 @@
 
 #include "main_thread.h"
 #include "webview.hpp"
-#include "../../utils/roblox_api.h"
+#include "network/roblox_api.h"
 #include "../components.h"
-#include "../../utils/time_utils.h"
-#include "../../utils/logging.hpp"
-#include "../../utils/status.h"
+#include "core/time_utils.h"
+#include "core/logging.hpp"
+#include "core/status.h"
 #include "../../ui.h"
 #include "../data.h"
-#include "../../utils/threading.h"
+#include "system/threading.h"
 
 using namespace ImGui;
 using namespace std;

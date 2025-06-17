@@ -10,8 +10,8 @@
 #include <windows.h>
 #include <dpapi.h>
 
-#include "../utils/base64.h"
-#include "../utils/logging.hpp"
+#include "core/base64.h"
+#include "core/logging.hpp"
 
 #pragma comment(lib, "Crypt32.lib")
 
