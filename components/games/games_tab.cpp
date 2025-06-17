@@ -448,6 +448,7 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
         Unindent(desiredTextIndent / 2);
     } else {
         Indent(desiredTextIndent);
+        Spacing();
         TextWrapped("Select a game from the list to see details or add a favorite.");
         Unindent(desiredTextIndent);
     }

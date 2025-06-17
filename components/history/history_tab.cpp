@@ -390,6 +390,7 @@ void RenderHistoryTab() {
         }
     } else {
         Indent(desiredTextIndent);
+        Spacing();
         TextWrapped("Select a log from the list to see details or launch the session.");
         Unindent(desiredTextIndent);
     }

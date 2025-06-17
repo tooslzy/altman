@@ -337,21 +337,25 @@ void RenderFriendsTab() {
 
     if (g_selectedFriendIdx < 0 || g_selectedFriendIdx >= static_cast<int>(g_friends.size())) {
         Indent(desiredTextIndent);
+        Spacing();
         TextWrapped("Click a friend to see more details or take action.");
         Unindent(desiredTextIndent);
     } else if (g_friendDetailsLoading.load()) {
         Indent(desiredTextIndent);
+        Spacing();
         Text("Loading full details...");
         Unindent(desiredTextIndent);
     } else {
         const auto &D = g_selectedFriend;
         if (D.id == 0 && g_friends[g_selectedFriendIdx].id != 0) {
             Indent(desiredTextIndent);
+            Spacing();
             Text("Fetching details for %s...", g_friends[g_selectedFriendIdx].username.c_str());
 
             Unindent(desiredTextIndent);
         } else if (D.id == 0) {
             Indent(desiredTextIndent);
+            Spacing();
             TextWrapped("Details not available or selection issue.");
             Unindent(desiredTextIndent);
         } else {
