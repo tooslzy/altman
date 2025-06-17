@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 
-struct LogInfo
-{
+struct LogInfo {
 	std::string fileName;
 	std::string fullPath;
 	std::string timestamp; // ISO UTC

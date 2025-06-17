@@ -16,12 +16,12 @@
 #include <objbase.h>
 
 #include "components/data.h"
-#include "utils/roblox_api.h"
-#include "utils/notifications.h"
-#include "utils/logging.hpp"
-#include "utils/confirm.h"
-#include "utils/main_thread.h"
-#include "utils/update.h"
+#include "network/roblox.h"
+#include "ui/notifications.h"
+#include "core/logging.hpp"
+#include "ui/confirm.h"
+#include "system/main_thread.h"
+#include "system/update.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>

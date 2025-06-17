@@ -8,16 +8,16 @@
 #include <stdexcept>
 #include <utility>
 
-#include "roblox_api.h"
+#include "roblox.h"
 #include "threading.h"
 #include "../data.h"
 #include "../../ui.h"
-#include "../../utils/launcher.hpp"
-#include "../../utils/status.h"
-#include "../../utils/logging.hpp"
-#include "../../utils/modal_popup.h"
-#include "../../utils/confirm.h"
-#include "../../utils/app_state.h"
+#include "system/launcher.hpp"
+#include "core/status.h"
+#include "core/logging.hpp"
+#include "ui/modal_popup.h"
+#include "ui/confirm.h"
+#include "core/app_state.h"
 
 #ifdef _WIN32
 #include <windows.h>

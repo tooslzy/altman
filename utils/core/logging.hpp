@@ -1,6 +1,6 @@
 #pragma once
-#include "../components/console/console.h"
-#include "modal_popup.h"
+#include "../../components/console/console.h"
+#include "ui/modal_popup.h"
 #include <string>
 
 #define LOG(msg) Console::Log(msg)
