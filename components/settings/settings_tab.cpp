@@ -56,6 +56,13 @@ void RenderSettingsTab()
                                 Data::SaveSettings("settings.json");
                         }
                 }
+
+                bool checkUpdates = g_checkUpdatesOnStartup;
+                if (Checkbox("Check for updates on startup", &checkUpdates))
+                {
+                        g_checkUpdatesOnStartup = checkUpdates;
+                        Data::SaveSettings("settings.json");
+                }
         }
         else
         {

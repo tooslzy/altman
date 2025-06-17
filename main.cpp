@@ -21,6 +21,7 @@
 #include "utils/logging.hpp"
 #include "utils/confirm.h"
 #include "utils/main_thread.h"
+#include "utils/update.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>
@@ -122,6 +123,9 @@ int WINAPI WinMain(
     }
 
     Data::LoadSettings("settings.json");
+    if (g_checkUpdatesOnStartup) {
+        CheckForUpdates();
+    }
     Data::LoadAccounts("accounts.json");
     Data::LoadFriends("friends.json");
 

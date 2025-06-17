@@ -30,6 +30,7 @@ int g_defaultAccountId = -1;
 array<char, 128> s_jobIdBuffer = {};
 array<char, 128> s_playerBuffer = {};
 int g_statusRefreshInterval = 1;
+bool g_checkUpdatesOnStartup = true;
 
 vector<BYTE> encryptData(const string &plainText) {
     DATA_BLOB DataIn;
@@ -234,8 +235,10 @@ namespace Data {
             fin >> j;
             g_defaultAccountId = j.value("defaultAccountId", -1);
             g_statusRefreshInterval = j.value("statusRefreshInterval", 1);
+            g_checkUpdatesOnStartup = j.value("checkUpdatesOnStartup", true);
             LOG_INFO("Default account ID = " + std::to_string(g_defaultAccountId));
             LOG_INFO("Status refresh interval = " + std::to_string(g_statusRefreshInterval));
+            LOG_INFO("Check updates on startup = " + std::string(g_checkUpdatesOnStartup ? "true" : "false"));
         } catch (const std::exception &e) {
             LOG_ERROR("Failed to parse " + filename + ": " + e.what());
         }
@@ -245,6 +248,7 @@ namespace Data {
         nlohmann::json j;
         j["defaultAccountId"] = g_defaultAccountId;
         j["statusRefreshInterval"] = g_statusRefreshInterval;
+        j["checkUpdatesOnStartup"] = g_checkUpdatesOnStartup;
         std::ofstream out{filename};
         if (!out.is_open()) {
             LOG_ERROR("Could not open " + filename + " for writing");
@@ -253,6 +257,7 @@ namespace Data {
         out << j.dump(4);
         LOG_INFO("Saved defaultAccountId=" + std::to_string(g_defaultAccountId));
         LOG_INFO("Saved statusRefreshInterval=" + std::to_string(g_statusRefreshInterval));
+        LOG_INFO("Saved checkUpdatesOnStartup=" + std::string(g_checkUpdatesOnStartup ? "true" : "false"));
     }
 
     void LoadFriends(const std::string &filename) {
