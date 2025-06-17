@@ -65,8 +65,6 @@
 * **Never** share your cookies with anyone.
 * Use the tool at your own risk.
 
-> **Note**: Altman is not affiliated with Roblox Corporation.
-
 ---
 
 ## License
