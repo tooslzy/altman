@@ -1,2 +1,2 @@
 #pragma once
-constexpr const char* APP_VERSION = "0.1.0";
+constexpr const char *APP_VERSION = "1.4.0";
