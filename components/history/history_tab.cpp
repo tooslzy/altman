@@ -302,8 +302,8 @@ void RenderHistoryTab() {
                                 logInfo.jobId + "\")";
                     if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
                     string luau =
-                        "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId +
-                        ", \"" + logInfo.jobId + "\")";
+                            "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId +
+                            ", \"" + logInfo.jobId + "\")";
                     if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
                     ImGui::EndMenu();
                 }
@@ -312,7 +312,6 @@ void RenderHistoryTab() {
                                   "&gameInstanceId=" + logInfo.jobId;
                     SetClipboardText(link.c_str());
                 }
-                Separator();
                 EndPopup();
             }
             PopID();
@@ -339,7 +338,7 @@ void RenderHistoryTab() {
 
             Indent(desiredTextIndent / 2);
             bool canLaunch = !logInfo.placeId.empty() && !logInfo.jobId.empty() &&
-                            !g_selectedAccountIds.empty();
+                             !g_selectedAccountIds.empty();
             if (canLaunch && Button("Launch this game session")) {
                 if (!logInfo.placeId.empty() && !logInfo.jobId.empty() && !g_selectedAccountIds.empty()) {
                     uint64_t place_id_val = 0;
