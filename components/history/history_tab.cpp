@@ -285,34 +285,34 @@ void RenderHistoryTab() {
             PushID(i);
             if (Selectable(niceLabel(logInfo).c_str(), g_selected_log_idx == i))
                 g_selected_log_idx = i;
-            if (BeginPopupContextItem("HistoryRowCtx")) {
-                if (!logInfo.placeId.empty() && !logInfo.jobId.empty()) {
-                    if (MenuItem("Copy Place ID")) {
-                        SetClipboardText(logInfo.placeId.c_str());
-                    }
-                    if (MenuItem("Copy Job ID")) {
-                        SetClipboardText(logInfo.jobId.c_str());
-                    }
-                    if (BeginMenu("Copy Launch Method")) {
-                        char buf[256];
-                        snprintf(buf, sizeof(buf), "roblox://placeId=%s&gameInstanceId=%s", logInfo.placeId.c_str(),
-                                 logInfo.jobId.c_str());
-                        if (MenuItem("Deep Link")) SetClipboardText(buf);
-                        string js = "Roblox.GameLauncher.joinGameInstance(" + logInfo.placeId + ", \"" + logInfo.jobId +
-                                    "\")";
-                        if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
-                        string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId
-                                      + ", \"" + logInfo.jobId + "\")";
-                        if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
-                        ImGui::EndMenu();
-                    }
-                    if (MenuItem("Generate Invite Link")) {
-                        string link = "https://www.roblox.com/games/start?placeId=" + logInfo.placeId +
-                                      "&gameInstanceId=" + logInfo.jobId;
-                        SetClipboardText(link.c_str());
-                    }
-                    Separator();
+            if (!logInfo.placeId.empty() && !logInfo.jobId.empty() &&
+                BeginPopupContextItem("HistoryRowCtx")) {
+                if (MenuItem("Copy Place ID")) {
+                    SetClipboardText(logInfo.placeId.c_str());
                 }
+                if (MenuItem("Copy Job ID")) {
+                    SetClipboardText(logInfo.jobId.c_str());
+                }
+                if (BeginMenu("Copy Launch Method")) {
+                    char buf[256];
+                    snprintf(buf, sizeof(buf), "roblox://placeId=%s&gameInstanceId=%s",
+                             logInfo.placeId.c_str(), logInfo.jobId.c_str());
+                    if (MenuItem("Deep Link")) SetClipboardText(buf);
+                    string js = "Roblox.GameLauncher.joinGameInstance(" + logInfo.placeId + ", \"" +
+                                logInfo.jobId + "\")";
+                    if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                    string luau =
+                        "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" + logInfo.placeId +
+                        ", \"" + logInfo.jobId + "\")";
+                    if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                    ImGui::EndMenu();
+                }
+                if (MenuItem("Generate Invite Link")) {
+                    string link = "https://www.roblox.com/games/start?placeId=" + logInfo.placeId +
+                                  "&gameInstanceId=" + logInfo.jobId;
+                    SetClipboardText(link.c_str());
+                }
+                Separator();
                 EndPopup();
             }
             PopID();
@@ -338,8 +338,10 @@ void RenderHistoryTab() {
             Separator();
 
             Indent(desiredTextIndent / 2);
-            if (Button("Launch this game session")) {
-                if (!logInfo.placeId.empty() && !g_selectedAccountIds.empty()) {
+            bool canLaunch = !logInfo.placeId.empty() && !logInfo.jobId.empty() &&
+                            !g_selectedAccountIds.empty();
+            if (canLaunch && Button("Launch this game session")) {
+                if (!logInfo.placeId.empty() && !logInfo.jobId.empty() && !g_selectedAccountIds.empty()) {
                     uint64_t place_id_val = 0;
                     try {
                         place_id_val = stoull(logInfo.placeId);
