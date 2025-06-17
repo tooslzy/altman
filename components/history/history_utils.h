@@ -5,6 +5,6 @@
 
 std::string ordSuffix(int day);
 
-std::string friendlyTimestamp(const std::string& isoTimestamp);
+std::string friendlyTimestamp(const std::string &isoTimestamp);
 
-std::string niceLabel(const LogInfo& logInfo);
+std::string niceLabel(const LogInfo &logInfo);

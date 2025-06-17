@@ -1,5 +1,4 @@
-#include "network/http.hpp"
-// #include "./status.h" // Status::Set is no longer used directly here, but Status::Get might be used by UI
+﻿#include "network/http.hpp"
 #include <windows.h>
 #include <iostream>
 #include <chrono>
