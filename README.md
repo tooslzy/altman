@@ -27,6 +27,12 @@
 
 ---
 
+## Preview
+
+![Altman Preview](assets/screenshot.png)
+
+---
+
 ## Usage Guide
 
 ### Adding Accounts
