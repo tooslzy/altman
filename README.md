@@ -6,72 +6,83 @@
             style="display: block; margin: 0 auto" />
 
 <h1>Altman</h1>
-<p>A comprehensive tool for managing multiple Roblox accounts with ease.</p>
+<p>Altman is a robust and intuitive tool designed to help you manage multiple Roblox accounts effortlessly.
+</p>
 </div>
+
+
+
+---
 
 ## Features
 
-- **Account Management** - Add and securely save account cookies for multiple Roblox accounts
-- **Quick Join** - Join games directly using JobID or PlaceID
-- **Friends List** - View friends list for each saved account
-- **Add Friends** - Send friend requests right from the Friends tab
-- **Server Browser** - Browse active servers for any Roblox game
-- **Enhanced Server Filtering** - Filter servers by ping or player count
-- **Game Search** - Search and discover Roblox games
-- **Log Parser** - Converts Roblox log files into human-readable format
+* **Multi-Account Management** – Add, organize, and securely store cookies for multiple Roblox accounts.
+* **Quick Join** – Instantly join games via **JobID** or **PlaceID**.
+* **Friends Integration** – View and manage friends per account.
+* **Friend Requests** – Send friend requests directly from the interface.
+* **Server Browser** – Explore active Roblox game servers.
+* **Advanced Filtering** – Sort servers by ping or player count.
+* **Game Discovery** – Search Roblox games by title or keyword.
+* **Log Parser** – Convert Roblox logs into a human-readable format.
+
 ---
 
-## Usage
+## Usage Guide
 
 ### Adding Accounts
 
-1. Launch Altman
-2. Go to "Accounts" in the title bar
-3. Go to "Add Account" > "Add Via Cookie"
-4. Enter your cookie and press "Add Cookie"
+1. Launch **Altman**.
+2. Navigate to `Accounts` on the menu bar.
+3. Click `Add Account` > `Add Via Cookie`.
+4. Paste your cookie and click **Add Cookie**.
 
 ### Joining Games
 
-- **By JobID**: Enter the JobID in the quick join field
-- **By PlaceID**: Use the PlaceID to join any available server
-- **By Username**: Join a user directly if their joins are enabled
+* **By JobID**: Enter the JobID in the Quick Join field.
+* **By PlaceID**: Use a valid PlaceID to connect to a server.
+* **By Username**: Connect directly to a user’s session (if joins are enabled).
 
-> [!TIP]
-> You may also join games through the Servers or Games tabs.
+> 💡 **Tip**: You can also join games through the **Servers** or **Games** tabs.
 
-### Viewing Friends
+### Managing Friends
 
-Select any saved account and navigate to the friends tab. The results will be automatically populated.
-Use the **Add Friend** button (next to Refresh) to send a request by username or user ID.
+1. Select an account from the list.
+2. Go to the **Friends** tab to see the current friend list.
+3. Use the **Add Friend** button to send requests via username or UserID.
 
 ---
 
 ## Requirements
 
-- Windows 10/11 (Tested for Windows 11 24H2)
-- Active internet connection
+* Windows 10 or 11 (Tested for Windows 11 24H2)
+* Active internet connection
 
 ---
 
 ## Security
 
-- Never share your account cookies with others
-- Use at your own risk
+* Your account cookies are **stored locally and encrypted**.
+* **Never** share your cookies with anyone.
+* Use the tool at your own risk.
 
-> [!NOTE]
-> Account cookies are stored locally and encrypted
+> **Note**: Altman is not affiliated with Roblox Corporation.
 
 ---
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is licensed under the **MIT License**. See the `LICENSE` file for full details.
+
+---
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first.
+Pull requests are welcome! For substantial changes, please open an issue to discuss the proposed improvements
+beforehand.
 
-## Disclaimer
+---
 
-> [!IMPORTANT]
-> This tool is not affiliated with Roblox Corporation. Use responsibly and in accordance with Roblox Terms of Service.
+## ⚠️ Disclaimer
+
+This tool is **not affiliated with Roblox Corporation**. Use responsibly and in compliance
+with [Roblox’s Terms of Service](https://en.help.roblox.com/hc/en-us/articles/203313410-Roblox-Terms-of-Use).
