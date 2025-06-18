@@ -68,6 +68,42 @@ inline std::string WStringToString(const std::wstring &wstr) {
     return strTo;
 }
 
+inline bool DeleteFileWithRetry(const std::wstring &path,
+                                int attempts = 50,
+                                int delayMs = 100) {
+    for (int i = 0; i < attempts; ++i) {
+        if (DeleteFileW(path.c_str()))
+            return true;
+        DWORD err = GetLastError();
+        if (err != ERROR_SHARING_VIOLATION && err != ERROR_ACCESS_DENIED) {
+            LOG_ERROR("Failed to delete file: " + WStringToString(path) +
+                      " (Error: " + std::to_string(err) + ")");
+            return false;
+        }
+        Sleep(delayMs);
+    }
+    LOG_ERROR("Timed out waiting to delete file: " + WStringToString(path));
+    return false;
+}
+
+inline bool RemoveDirectoryWithRetry(const std::wstring &path,
+                                     int attempts = 50,
+                                     int delayMs = 100) {
+    for (int i = 0; i < attempts; ++i) {
+        if (RemoveDirectoryW(path.c_str()))
+            return true;
+        DWORD err = GetLastError();
+        if (err != ERROR_SHARING_VIOLATION && err != ERROR_ACCESS_DENIED) {
+            LOG_ERROR("Failed to remove directory: " + WStringToString(path) +
+                      " (Error: " + std::to_string(err) + ")");
+            return false;
+        }
+        Sleep(delayMs);
+    }
+    LOG_ERROR("Timed out waiting to remove directory: " + WStringToString(path));
+    return false;
+}
+
 inline void ClearDirectoryContents(const std::wstring &directoryPath) {
     std::wstring searchPath = directoryPath + L"\\*";
     WIN32_FIND_DATAW findFileData;
@@ -97,18 +133,18 @@ inline void ClearDirectoryContents(const std::wstring &directoryPath) {
         if (findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             ClearDirectoryContents(itemFullPath);
 
-            if (!RemoveDirectoryW(itemFullPath.c_str())) {
-                LOG_ERROR("ClearDirectoryContents: Failed to remove sub-directory: " +
-                          WStringToString(itemFullPath) + " (Error: " + std::to_string(GetLastError()) + ")");
-            } else {
+            if (RemoveDirectoryWithRetry(itemFullPath)) {
                 LOG_INFO("ClearDirectoryContents: Removed sub-directory: " + WStringToString(itemFullPath));
+            } else {
+                LOG_ERROR("ClearDirectoryContents: Failed to remove sub-directory: " +
+                          WStringToString(itemFullPath));
             }
         } else {
-            if (!DeleteFileW(itemFullPath.c_str())) {
-                LOG_ERROR("ClearDirectoryContents: Failed to delete file: " +
-                          WStringToString(itemFullPath) + " (Error: " + std::to_string(GetLastError()) + ")");
-            } else {
+            if (DeleteFileWithRetry(itemFullPath)) {
                 LOG_INFO("ClearDirectoryContents: Deleted file: " + WStringToString(itemFullPath));
+            } else {
+                LOG_ERROR("ClearDirectoryContents: Failed to delete file: " +
+                          WStringToString(itemFullPath));
             }
         }
     } while (FindNextFileW(hFind, &findFileData) != 0);
@@ -141,11 +177,11 @@ inline void ClearRobloxCache() {
     LOG_INFO("Processing directory for full removal: " + WStringToString(localStoragePath));
     if (directoryExists(localStoragePath)) {
         ClearDirectoryContents(localStoragePath);
-        if (RemoveDirectoryW(localStoragePath.c_str())) {
+        if (RemoveDirectoryWithRetry(localStoragePath)) {
             LOG_INFO("Successfully removed directory: " + WStringToString(localStoragePath));
         } else {
             LOG_ERROR("Failed to remove directory (it might not be fully empty or is in use): " +
-                      WStringToString(localStoragePath) + " (Error: " + std::to_string(GetLastError()) + ")");
+                      WStringToString(localStoragePath));
         }
     } else {
         LOG_INFO("Directory not found, skipping: " + WStringToString(localStoragePath));
@@ -155,11 +191,11 @@ inline void ClearRobloxCache() {
     LOG_INFO("Processing directory for full removal: " + WStringToString(otaPatchBackupsPath));
     if (directoryExists(otaPatchBackupsPath)) {
         ClearDirectoryContents(otaPatchBackupsPath);
-        if (RemoveDirectoryW(otaPatchBackupsPath.c_str())) {
+        if (RemoveDirectoryWithRetry(otaPatchBackupsPath)) {
             LOG_INFO("Successfully removed directory: " + WStringToString(otaPatchBackupsPath));
         } else {
             LOG_ERROR("Failed to remove directory (it might not be fully empty or is in use): " +
-                      WStringToString(otaPatchBackupsPath) + " (Error: " + std::to_string(GetLastError()) + ")");
+                      WStringToString(otaPatchBackupsPath));
         }
     } else {
         LOG_INFO("Directory not found, skipping: " + WStringToString(otaPatchBackupsPath));
@@ -177,11 +213,10 @@ inline void ClearRobloxCache() {
                 wcscmp(findRbxData.cFileName, L".") != 0 &&
                 wcscmp(findRbxData.cFileName, L"..") != 0) {
                 std::wstring filePathToDelete = robloxBasePath + L"\\" + findRbxData.cFileName;
-                if (DeleteFileW(filePathToDelete.c_str())) {
+                if (DeleteFileWithRetry(filePathToDelete)) {
                     LOG_INFO("Deleted file: " + WStringToString(filePathToDelete));
                 } else {
-                    LOG_ERROR("Failed to delete file: " + WStringToString(filePathToDelete) +
-                              " (Error: " + std::to_string(GetLastError()) + ")");
+                    LOG_ERROR("Failed to delete file: " + WStringToString(filePathToDelete));
                 }
             }
         } while (FindNextFileW(hFindRbx, &findRbxData) != 0);
