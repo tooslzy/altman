@@ -67,7 +67,7 @@ void ReloadFonts(float dpiScale) {
     float baseFontSize = 16.0f * dpiScale;
     float iconFontSize = 13.0f * dpiScale;
     // Load main font
-    g_rubikFont = io.Fonts->AddFontFromFileTTF("assets/rubik-regular.ttf", baseFontSize);
+    g_rubikFont = io.Fonts->AddFontFromFileTTF("assets/fonts/rubik-regular.ttf", baseFontSize);
     if (!g_rubikFont) {
         LOG_ERROR("Failed to load rubik-regular.ttf font.");
         g_rubikFont = io.Fonts->AddFontDefault();
@@ -78,12 +78,12 @@ void ReloadFonts(float dpiScale) {
     iconCfg.PixelSnapH = true;
     static constexpr ImWchar fa_solid_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
     g_iconFont = io.Fonts->AddFontFromFileTTF(
-        "assets/fa-solid-900.ttf",
+        "assets/fonts/fa-solid.ttf",
         iconFontSize,
         &iconCfg,
         fa_solid_ranges);
     if (!g_iconFont && g_rubikFont) {
-        LOG_ERROR("Failed to load fa-solid-900.ttf font for icons.");
+        LOG_ERROR("Failed to load fa-solid.ttf font for icons.");
     }
     io.FontDefault = g_rubikFont;
     // Scale ImGui style
