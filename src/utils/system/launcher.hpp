@@ -9,6 +9,8 @@
 
 #include "core/logging.hpp"
 #include "ui/notifications.h"
+#include "../../components/data.h"
+#include "roblox_control.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -117,9 +119,15 @@ inline HANDLE startRoblox(uint64_t placeId, const string &jobId, const string &c
 
 inline void launchRobloxSequential(uint64_t placeId, const std::string &jobId,
                                    const std::vector<std::pair<int, std::string> > &accounts) {
-	for (const auto &[accountId, cookie]: accounts) {
-		LOG_INFO("Launching Roblox for account ID: " + std::to_string(accountId) +
-			" PlaceID: " + std::to_string(placeId) +
+#ifdef _WIN32
+        if (g_killRobloxOnLaunch)
+                RobloxControl::KillRobloxProcesses();
+        if (g_clearCacheOnLaunch)
+                RobloxControl::ClearRobloxCache();
+#endif
+        for (const auto &[accountId, cookie]: accounts) {
+                LOG_INFO("Launching Roblox for account ID: " + std::to_string(accountId) +
+                        " PlaceID: " + std::to_string(placeId) +
 			(jobId.empty() ? "" : " JobID: " + jobId));
 		HANDLE proc = startRoblox(placeId, jobId, cookie);
 		if (proc) {

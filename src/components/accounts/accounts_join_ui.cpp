@@ -155,12 +155,6 @@ void RenderJoinOptions() {
             }
 
             Threading::newThread([placeId_val, jobId_str, accounts]() {
-#ifdef _WIN32
-                if (g_killRobloxOnLaunch)
-                    RobloxControl::KillRobloxProcesses();
-                if (g_clearCacheOnLaunch)
-                    RobloxControl::ClearRobloxCache();
-#endif
                 launchRobloxSequential(placeId_val, jobId_str, accounts);
             });
         };
