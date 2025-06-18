@@ -18,6 +18,6 @@ namespace FriendsActions {
 	void FetchFriendDetails(
 		const std::string &friendId,
 		const std::string &cookie,
-		RobloxApi::FriendDetail &outFriendDetail,
+		Roblox::FriendDetail &outFriendDetail,
 		std::atomic<bool> &loadingFlag);
 }

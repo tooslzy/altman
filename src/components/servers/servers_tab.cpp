@@ -37,7 +37,7 @@ static ServerSortMode g_serverSortMode = ServerSortMode::None;
 static int g_serverSortComboIndex = 0;
 
 static vector<PublicServerInfo> s_cachedServers;
-static unordered_map<string, RobloxApi::ServerPage> g_pageCache;
+static unordered_map<string, Roblox::ServerPage> g_pageCache;
 
 static string g_currCursor_servers;
 static string g_nextCursor_servers;
@@ -64,12 +64,12 @@ static void fetchPageServers(uint64_t placeId, const string &cursor = {}) {
             g_pageCache.clear();
             g_current_placeId_servers = placeId;
         }
-        RobloxApi::ServerPage page;
+        Roblox::ServerPage page;
         auto it_cache = g_pageCache.find(cursor);
         if (it_cache != g_pageCache.end()) {
             page = it_cache->second;
         } else {
-            page = RobloxApi::getPublicServersPage(placeId, cursor);
+            page = Roblox::getPublicServersPage(placeId, cursor);
             g_pageCache.emplace(cursor, page);
         }
         s_cachedServers = page.data;

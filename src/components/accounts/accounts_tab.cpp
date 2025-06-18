@@ -196,7 +196,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 					int accId = account.id;
 					string cookie = account.cookie;
 					Threading::newThread([accId, cookie]() {
-						auto vs = RobloxApi::getVoiceChatStatus(cookie);
+						auto vs = Roblox::getVoiceChatStatus(cookie);
 						MainThread::Post([accId, vs]() {
 							auto it = find_if(g_accounts.begin(), g_accounts.end(),
 							                  [&](const AccountData &a) { return a.id == accId; });

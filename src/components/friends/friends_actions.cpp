@@ -28,7 +28,7 @@ namespace FriendsActions {
         loadingFlag = true;
         LOG_INFO("Fetching friends list...");
 
-        auto list = RobloxApi::getFriends(userId, cookie);
+        auto list = Roblox::getFriends(userId, cookie);
 
         vector<uint64_t> ids;
         ids.reserve(list.size());
@@ -49,7 +49,7 @@ namespace FriendsActions {
             if (batch_ids.empty())
                 continue;
 
-            auto presMap = RobloxApi::getPresences(batch_ids, cookie);
+            auto presMap = Roblox::getPresences(batch_ids, cookie);
 
             for (const auto &[uid, pdata]: presMap) {
                 auto it = find_if(list.begin(), list.end(),
@@ -133,11 +133,11 @@ namespace FriendsActions {
     void FetchFriendDetails(
         const string &friendId,
         const string &cookie,
-        RobloxApi::FriendDetail &outFriendDetail,
+        Roblox::FriendDetail &outFriendDetail,
         atomic<bool> &loadingFlag) {
         loadingFlag = true;
         LOG_INFO("Fetching friend details...");
-        outFriendDetail = RobloxApi::getUserDetails(friendId, cookie);
+        outFriendDetail = Roblox::getUserDetails(friendId, cookie);
         loadingFlag = false;
         LOG_INFO("Friend details loaded.");
     }

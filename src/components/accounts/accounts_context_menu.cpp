@@ -70,7 +70,7 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
             g_cachedGameInfo.erase(account.id);
             if (account.status == "InGame") {
                 try {
-                    auto pres = RobloxApi::getPresences({stoull(account.userId)}, account.cookie);
+                    auto pres = Roblox::getPresences({stoull(account.userId)}, account.cookie);
                     auto itp = pres.find(stoull(account.userId));
                     if (itp != pres.end()) {
                         g_cachedGameInfo[account.id] = {itp->second.placeId, itp->second.gameId};
@@ -214,7 +214,7 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                     static uniform_int_distribution<int> d1(100000, 130000), d2(100000, 900000);
 
                     string browserTracker = to_string(d1(rng)) + to_string(d2(rng));
-                    string ticket = RobloxApi::fetchAuthTicket(acc_cookie);
+                    string ticket = Roblox::fetchAuthTicket(acc_cookie);
                     if (ticket.empty()) {
                         LOG_ERROR(
                             "Failed to grab auth ticket for account ID " + to_string(account_id) +

@@ -135,13 +135,13 @@ int WINAPI WinMain(
         for (auto &acct: g_accounts) {
             if (acct.cookie.empty())
                 continue;
-            auto banStatus = RobloxApi::checkBanStatus(acct.cookie);
-            if (banStatus == RobloxApi::BanCheckResult::InvalidCookie) {
+            auto banStatus = Roblox::checkBanStatus(acct.cookie);
+            if (banStatus == Roblox::BanCheckResult::InvalidCookie) {
                 invalidIds.push_back(acct.id);
                 if (!names.empty())
                     names += ", ";
                 names += acct.displayName.empty() ? acct.username : acct.displayName;
-            } else if (banStatus == RobloxApi::BanCheckResult::Banned) {
+            } else if (banStatus == Roblox::BanCheckResult::Banned) {
                 acct.status = "Banned";
             }
         }
@@ -151,8 +151,8 @@ int WINAPI WinMain(
                 try {
                     uid = std::stoull(acct.userId);
                     if (acct.status != "Banned")
-                        acct.status = RobloxApi::getPresence(acct.cookie, uid);
-                    auto vs = RobloxApi::getVoiceChatStatus(acct.cookie);
+                        acct.status = Roblox::getPresence(acct.cookie, uid);
+                    auto vs = Roblox::getVoiceChatStatus(acct.cookie);
                     acct.voiceStatus = vs.status;
                     acct.voiceBanExpiry = vs.bannedUntil;
                 } catch (const std::exception &e) {

@@ -108,8 +108,8 @@ bool RenderMainMenu() {
 				Threading::newThread([] {
 					LOG_INFO("Refreshing account statuses...");
 					for (auto &acct: g_accounts) {
-						acct.status = RobloxApi::getPresence(acct.cookie, stoull(acct.userId));
-						auto vs = RobloxApi::getVoiceChatStatus(acct.cookie);
+						acct.status = Roblox::getPresence(acct.cookie, stoull(acct.userId));
+						auto vs = Roblox::getVoiceChatStatus(acct.cookie);
 						acct.voiceStatus = vs.status;
 						acct.voiceBanExpiry = vs.bannedUntil;
 					}
@@ -141,11 +141,11 @@ bool RenderMainMenu() {
 							}
 							int nextId = maxId + 1;
 
-							uint64_t uid = RobloxApi::getUserId(cookie);
-							string username = RobloxApi::getUsername(cookie);
-							string displayName = RobloxApi::getDisplayName(cookie);
-							string presence = RobloxApi::getPresence(cookie, uid);
-							auto vs = RobloxApi::getVoiceChatStatus(cookie);
+							uint64_t uid = Roblox::getUserId(cookie);
+							string username = Roblox::getUsername(cookie);
+							string displayName = Roblox::getDisplayName(cookie);
+							string presence = Roblox::getPresence(cookie, uid);
+							auto vs = Roblox::getVoiceChatStatus(cookie);
 
 							AccountData newAcct;
 							newAcct.id = nextId;

@@ -116,8 +116,8 @@ void RenderJoinOptions() {
 
                 Threading::newThread([username, accounts]() {
                     try {
-                        uint64_t uid = RobloxApi::getUserIdFromUsername(username);
-                        auto pres = RobloxApi::getPresences({uid}, accounts.front().second);
+                        uint64_t uid = Roblox::getUserIdFromUsername(username);
+                        auto pres = Roblox::getPresences({uid}, accounts.front().second);
                         auto it = pres.find(uid);
                         if (it == pres.end() || it->second.presence != "InGame" ||
                             it->second.placeId == 0 || it->second.gameId.empty()) {

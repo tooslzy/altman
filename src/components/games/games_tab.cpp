@@ -25,7 +25,7 @@ static char searchBuffer[64] = "";
 static int selectedIndex = -1;
 static vector<GameInfo> gamesList;
 static vector<GameInfo> originalGamesList;
-static unordered_map<uint64_t, RobloxApi::GameDetail> gameDetailCache;
+static unordered_map<uint64_t, Roblox::GameDetail> gameDetailCache;
 
 static unordered_set<uint64_t> favoriteGameIds;
 static vector<GameInfo> favoriteGamesList;
@@ -106,7 +106,7 @@ static void RenderGameSearch() {
     SameLine(0, style.ItemSpacing.x);
     if (Button(" Search  \xEF\x80\x82 ", ImVec2(searchButtonWidth, 0)) && searchBuffer[0] != '\0') {
         selectedIndex = -1;
-        originalGamesList = RobloxApi::searchGames(searchBuffer);
+        originalGamesList = Roblox::searchGames(searchBuffer);
         erase_if(originalGamesList, [&](const GameInfo &g) {
             return favoriteGameIds.contains(g.universeId);
         });
@@ -293,11 +293,11 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
 
     if (currentGameInfo) {
         const GameInfo &gameInfo = *currentGameInfo;
-        RobloxApi::GameDetail detailInfo;
+        Roblox::GameDetail detailInfo;
         auto cacheIterator = gameDetailCache.find(currentUniverseId);
         if (cacheIterator == gameDetailCache.end()) {
             if (currentUniverseId != 0) {
-                detailInfo = RobloxApi::getGameDetail(currentUniverseId);
+                detailInfo = Roblox::getGameDetail(currentUniverseId);
                 gameDetailCache[currentUniverseId] = detailInfo;
             }
         } else {

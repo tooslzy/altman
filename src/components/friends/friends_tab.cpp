@@ -21,7 +21,7 @@ using namespace ImGui;
 using namespace std;
 
 static int g_selectedFriendIdx = -1;
-static RobloxApi::FriendDetail g_selectedFriend;
+static Roblox::FriendDetail g_selectedFriend;
 static atomic<bool> g_friendDetailsLoading{false};
 static atomic<bool> g_friendsLoading{false};
 static vector<FriendInfo> g_unfriended;
@@ -133,10 +133,10 @@ void RenderFriendsTab() {
                     if (all_of(input.begin(), input.end(), [](unsigned char c) { return std::isdigit(c); })) {
                         uid = stoull(input);
                     } else {
-                        uid = RobloxApi::getUserIdFromUsername(input);
+                        uid = Roblox::getUserIdFromUsername(input);
                     }
                     string resp;
-                    bool ok = RobloxApi::sendFriendRequest(to_string(uid), cookie, &resp);
+                    bool ok = Roblox::sendFriendRequest(to_string(uid), cookie, &resp);
                     if (ok) {
                         LOG_INFO("Friend request sent");
                         cerr << "Friend request response: " << resp << "\n";
@@ -253,7 +253,7 @@ void RenderFriendsTab() {
                     ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
                         Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
                             string resp;
-                            bool ok = RobloxApi::unfriend(to_string(friendId), cookieCopy, &resp);
+                            bool ok = Roblox::unfriend(to_string(friendId), cookieCopy, &resp);
                             if (ok) {
                                 erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
                                 if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size())
