@@ -67,9 +67,9 @@ void ReloadFonts(float dpiScale) {
     float baseFontSize = 16.0f * dpiScale;
     float iconFontSize = 13.0f * dpiScale;
     // Load main font
-    g_rubikFont = io.Fonts->AddFontFromFileTTF("assets/Rubik-Regular.ttf", baseFontSize);
+    g_rubikFont = io.Fonts->AddFontFromFileTTF("assets/rubik-regular.ttf", baseFontSize);
     if (!g_rubikFont) {
-        LOG_ERROR("Failed to load Rubik-Regular.ttf font.");
+        LOG_ERROR("Failed to load rubik-regular.ttf font.");
         g_rubikFont = io.Fonts->AddFontDefault();
     }
     // Load icon font
