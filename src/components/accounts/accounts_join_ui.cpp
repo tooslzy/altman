@@ -21,29 +21,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <tlhelp32.h>
 #endif
 
-#ifdef _WIN32
-static bool isRobloxRunning() {
-    HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snap == INVALID_HANDLE_VALUE)
-        return false;
-    PROCESSENTRY32 pe{};
-    pe.dwSize = sizeof(pe);
-    bool running = false;
-    if (Process32First(snap, &pe)) {
-        do {
-            if (_stricmp(pe.szExeFile, "RobloxPlayerBeta.exe") == 0) {
-                running = true;
-                break;
-            }
-        } while (Process32Next(snap, &pe));
-    }
-    CloseHandle(snap);
-    return running;
-}
-#endif
+#include "system/roblox_control.h"
 
 using namespace ImGui;
 using namespace std;
@@ -166,30 +146,26 @@ void RenderJoinOptions() {
                 return;
             }
 
+            std::vector<std::pair<int, std::string>> accounts;
             for (int id : g_selectedAccountIds) {
                 auto it = std::find_if(g_accounts.begin(), g_accounts.end(),
                                        [id](auto &a) { return a.id == id; });
-                if (it == g_accounts.end())
-                    continue;
-
-                std::thread([placeId_val, jobId_str, cookie = it->cookie, account_id = it->id]() {
-                    LOG_INFO("Launching Roblox for account " + std::to_string(account_id) +
-                             " PlaceID=" + std::to_string(placeId_val) +
-                             (jobId_str.empty() ? "" : " JobID=" + jobId_str));
-
-                    HANDLE proc = startRoblox(placeId_val, jobId_str, cookie);
-                    if (proc) {
-                        WaitForInputIdle(proc, INFINITE);
-                        CloseHandle(proc);
-                        LOG_INFO("Roblox launched successfully for account " + std::to_string(account_id));
-                    } else {
-                        LOG_ERROR("Failed to start Roblox for account " + std::to_string(account_id));
-                    }
-                }).detach();
+                if (it != g_accounts.end())
+                    accounts.emplace_back(it->id, it->cookie);
             }
+
+            Threading::newThread([placeId_val, jobId_str, accounts]() {
+#ifdef _WIN32
+                if (g_killRobloxOnLaunch)
+                    RobloxControl::KillRobloxProcesses();
+                if (g_clearCacheOnLaunch)
+                    RobloxControl::ClearRobloxCache();
+#endif
+                launchRobloxSequential(placeId_val, jobId_str, accounts);
+            });
         };
 #ifdef _WIN32
-        if (!g_multiRobloxEnabled && isRobloxRunning()) {
+        if (!g_multiRobloxEnabled && RobloxControl::IsRobloxRunning()) {
             ConfirmPopup::Add("Roblox is already running. Launch anyway?", doJoin);
         } else {
             doJoin();
