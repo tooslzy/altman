@@ -104,19 +104,27 @@ bool RenderMainMenu() {
 
 	if (BeginMainMenuBar()) {
 		if (BeginMenu("Accounts")) {
-			if (MenuItem("Refresh Statuses")) {
-				Threading::newThread([] {
-					LOG_INFO("Refreshing account statuses...");
-					for (auto &acct: g_accounts) {
-						acct.status = Roblox::getPresence(acct.cookie, stoull(acct.userId));
-						auto vs = Roblox::getVoiceChatStatus(acct.cookie);
-						acct.voiceStatus = vs.status;
-						acct.voiceBanExpiry = vs.bannedUntil;
-					}
-					Data::SaveAccounts();
-					LOG_INFO("Refreshed account statuses");
-				});
-			}
+                        if (MenuItem("Refresh Statuses")) {
+                                Threading::newThread([] {
+                                        LOG_INFO("Refreshing account statuses...");
+                                        for (auto &acct: g_accounts) {
+                                                auto banStatus = Roblox::refreshBanStatus(acct.cookie);
+                                                if (banStatus == Roblox::BanCheckResult::Banned) {
+                                                        acct.status = "Banned";
+                                                        continue;
+                                                }
+
+                                                if (!acct.userId.empty()) {
+                                                        acct.status = Roblox::getPresence(acct.cookie, stoull(acct.userId));
+                                                        auto vs = Roblox::getVoiceChatStatus(acct.cookie);
+                                                        acct.voiceStatus = vs.status;
+                                                        acct.voiceBanExpiry = vs.bannedUntil;
+                                                }
+                                        }
+                                        Data::SaveAccounts();
+                                        LOG_INFO("Refreshed account statuses");
+                                });
+                        }
 
 			Separator();
 

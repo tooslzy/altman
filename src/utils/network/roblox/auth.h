@@ -12,11 +12,15 @@
 
 
 namespace Roblox {
-	enum class BanCheckResult {
-		InvalidCookie,
-		Unbanned,
-		Banned
-	};
+        enum class BanCheckResult {
+                InvalidCookie,
+                Unbanned,
+                Banned
+        };
+
+        // Cache for ban check results so we don't hit the endpoint repeatedly.
+        inline std::mutex g_banStatusMutex;
+        inline std::unordered_map<std::string, BanCheckResult> g_banStatusCache;
 
 	static BanCheckResult checkBanStatus(const std::string &cookie) {
 		LOG_INFO("Checking moderation status");
@@ -37,20 +41,32 @@ namespace Roblox {
 		return BanCheckResult::Unbanned;
 	}
 
-	static BanCheckResult cachedBanStatus(const std::string &cookie) {
-		static std::mutex m;
-		static std::unordered_map<std::string, BanCheckResult> cache; {
-			std::lock_guard<std::mutex> lock(m);
-			auto it = cache.find(cookie);
-			if (it != cache.end())
-				return it->second;
-		}
-		BanCheckResult status = checkBanStatus(cookie); {
-			std::lock_guard<std::mutex> lock(m);
-			cache[cookie] = status;
-		}
-		return status;
-	}
+        static BanCheckResult cachedBanStatus(const std::string &cookie) {
+                {
+                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
+                        auto it = g_banStatusCache.find(cookie);
+                        if (it != g_banStatusCache.end())
+                                return it->second;
+                }
+
+                BanCheckResult status = checkBanStatus(cookie);
+
+                {
+                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
+                        g_banStatusCache[cookie] = status;
+                }
+                return status;
+        }
+
+        // Force refresh the cached ban status for a cookie
+        static BanCheckResult refreshBanStatus(const std::string &cookie) {
+                BanCheckResult status = checkBanStatus(cookie);
+                {
+                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
+                        g_banStatusCache[cookie] = status;
+                }
+                return status;
+        }
 
 
 	static bool isCookieValid(const std::string &cookie) {
