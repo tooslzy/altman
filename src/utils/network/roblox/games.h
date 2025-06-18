@@ -29,11 +29,11 @@ namespace Roblox {
 		const std::string url =
 				"https://games.roblox.com/v1/games?universeIds=" + std::to_string(universeId);
 
-		HttpClient::Response resp = HttpClient::get(url);
-		if (resp.status_code != 200) {
-			LOG_ERROR("Game detail fetch failed: HTTP " + std::to_string(resp.status_code));
-			return GameDetail{};
-		}
+                HttpClient::Response resp = HttpClient::get(url);
+                if (resp.status_code < 200 || resp.status_code >= 300) {
+                        LOG_ERROR("Game detail fetch failed: HTTP " + std::to_string(resp.status_code));
+                        return GameDetail{};
+                }
 
 		GameDetail d;
 		try {
@@ -73,11 +73,11 @@ namespace Roblox {
 				"/servers/Public?sortOrder=Asc&limit=100" +
 				(cursor.empty() ? "" : "&cursor=" + cursor);
 
-		HttpClient::Response resp = HttpClient::get(url);
-		if (resp.status_code != 200) {
-			LOG_ERROR("Failed to fetch servers: HTTP " + std::to_string(resp.status_code));
-			return ServerPage{};
-		}
+                HttpClient::Response resp = HttpClient::get(url);
+                if (resp.status_code < 200 || resp.status_code >= 300) {
+                        LOG_ERROR("Failed to fetch servers: HTTP " + std::to_string(resp.status_code));
+                        return ServerPage{};
+                }
 
 		auto json = HttpClient::decode(resp);
 
@@ -120,10 +120,11 @@ namespace Roblox {
 				{"pageType", "all"}
 			});
 
-		std::vector<GameInfo> out;
-		if (resp.status_code != 200) {
-			return out;
-		}
+                std::vector<GameInfo> out;
+                if (resp.status_code < 200 || resp.status_code >= 300) {
+                        LOG_ERROR("Game search failed: HTTP " + std::to_string(resp.status_code));
+                        return out;
+                }
 
 		auto j = HttpClient::decode(resp);
 
