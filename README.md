@@ -68,6 +68,7 @@
 ## Security
 
 * Your account cookies are **stored locally and encrypted**.
+* All save files are kept inside a **storage** folder in the application's directory.
 * **Never** share your cookies with anyone.
 * Use the tool at your own risk.
 
