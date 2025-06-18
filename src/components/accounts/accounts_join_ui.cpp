@@ -66,6 +66,18 @@ static const char *GetJoinHintLocal(int idx) {
 }
 
 
+void FillJoinOptions(uint64_t placeId, const std::string &jobId) {
+    snprintf(join_value_buf, sizeof(join_value_buf), "%llu", (unsigned long long)placeId);
+    if (jobId.empty()) {
+        join_jobid_buf[0] = '\0';
+        join_type_combo_index = 0;
+    } else {
+        snprintf(join_jobid_buf, sizeof(join_jobid_buf), "%s", jobId.c_str());
+        join_type_combo_index = 1;
+    }
+    g_activeTab = Tab_Accounts;
+}
+
 void RenderJoinOptions() {
     Spacing();
     Text("Join Options");

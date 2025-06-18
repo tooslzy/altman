@@ -16,6 +16,7 @@
 #include "ui/webview.hpp"
 #include "../games/games_utils.h"
 #include "ui/confirm.h"
+#include "../accounts/accounts_join_ui.h"
 
 using namespace ImGui;
 using namespace std;
@@ -214,6 +215,9 @@ void RenderFriendsTab() {
                                 launchRobloxSequential(row.placeId, row.gameId, accounts);
                             });
                         }
+                    }
+                    if (MenuItem("Fill Join Options")) {
+                        FillJoinOptions(f.placeId, f.gameId);
                     }
                     if (MenuItem("Copy Place ID")) {
                         SetClipboardText(to_string(f.placeId).c_str());

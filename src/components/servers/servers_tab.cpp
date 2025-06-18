@@ -21,6 +21,7 @@
 #include "system/launcher.hpp"
 #include "ui/modal_popup.h"
 #include "../../ui.h"
+#include "../accounts/accounts_join_ui.h"
 
 using namespace ImGui;
 using namespace std;
@@ -339,6 +340,9 @@ void RenderServersTab() {
                         Status::Error("No account selected to join server.");
                         ModalPopup::Add("Select an account first.");
                     }
+                }
+                if (MenuItem("Fill Join Options")) {
+                    FillJoinOptions(g_current_placeId_servers, srv.jobId);
                 }
                 EndPopup();
             }
