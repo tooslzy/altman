@@ -5,8 +5,8 @@
             height="256" 
             style="display: block; margin: 0 auto" />
 
-<h1>Altman</h1>
-<p>Altman is a robust and intuitive tool designed to help you manage multiple Roblox accounts effortlessly.
+<h1>AltMan</h1>
+<p>AltMan is a robust and intuitive tool designed to help you manage multiple Roblox accounts effortlessly.
 </p>
 </div>
 
@@ -29,7 +29,7 @@
 
 ## Preview
 
-![Altman Preview](src/assets/images/screenshot.png)
+![AltMan Preview](src/assets/images/screenshot.png)
 
 ---
 
@@ -37,7 +37,7 @@
 
 ### Adding Accounts
 
-1. Launch **Altman**.
+1. Launch **AltMan**.
 2. Navigate to `Accounts` on the menu bar.
 3. Click `Add Account` > `Add Via Cookie`.
 4. Paste your cookie and click **Add Cookie**.
