@@ -1,0 +1,5 @@
+#define IDI_ICON_16 101
+#define IDI_ICON_32 102
+
+IDI_ICON_16 ICON "assets/images/16x16.ico"
+IDI_ICON_32 ICON "assets/images/32x32.ico"

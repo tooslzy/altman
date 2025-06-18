@@ -18,43 +18,43 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 # Create ImGui static library
 add_library(imgui STATIC
-        vendor/ImGui/imgui.cpp
-        vendor/ImGui/imgui_draw.cpp
-        vendor/ImGui/imgui_tables.cpp
-        vendor/ImGui/imgui_widgets.cpp
-        vendor/ImGui/backends/imgui_impl_dx11.cpp
-        vendor/ImGui/backends/imgui_impl_win32.cpp
+        src/vendor/ImGui/imgui.cpp
+        src/vendor/ImGui/imgui_draw.cpp
+        src/vendor/ImGui/imgui_tables.cpp
+        src/vendor/ImGui/imgui_widgets.cpp
+        src/vendor/ImGui/backends/imgui_impl_dx11.cpp
+        src/vendor/ImGui/backends/imgui_impl_win32.cpp
 )
 
 target_include_directories(imgui PUBLIC
-        vendor/ImGui
-        vendor/ImGui/backends
+        src/vendor/ImGui
+        src/vendor/ImGui/backends
 )
 
 target_compile_features(imgui PUBLIC cxx_std_20)
 
 # Application sources
 set(APP_SRC
-        main.cpp
-        ui.cpp
-        resource.rc
-        components/data.cpp
-        components/menu.cpp
-        components/accounts/accounts_context_menu.cpp
-        components/accounts/accounts_join_ui.cpp
-        components/accounts/accounts_tab.cpp
-        components/console/console_tab.cpp
-        components/friends/friends_actions.cpp
-        components/friends/friends_tab.cpp
-        components/games/games_tab.cpp
-        components/games/games_utils.cpp
-        components/history/history_tab.cpp
-        components/history/history_utils.cpp
-        components/history/log_parser.cpp
-        components/servers/servers_tab.cpp
-        components/servers/servers_utils.cpp
-        components/settings/settings_tab.cpp
-        utils/ui/webview.hpp
+        src/main.cpp
+        src/ui.cpp
+        src/resource.rc
+        src/components/data.cpp
+        src/components/menu.cpp
+        src/components/accounts/accounts_context_menu.cpp
+        src/components/accounts/accounts_join_ui.cpp
+        src/components/accounts/accounts_tab.cpp
+        src/components/console/console_tab.cpp
+        src/components/friends/friends_actions.cpp
+        src/components/friends/friends_tab.cpp
+        src/components/games/games_tab.cpp
+        src/components/games/games_utils.cpp
+        src/components/history/history_tab.cpp
+        src/components/history/history_utils.cpp
+        src/components/history/log_parser.cpp
+        src/components/servers/servers_tab.cpp
+        src/components/servers/servers_utils.cpp
+        src/components/settings/settings_tab.cpp
+        src/utils/ui/webview.hpp
 )
 
 # Create executable
@@ -63,12 +63,12 @@ add_executable(altman WIN32 ${APP_SRC})
 target_compile_features(altman PRIVATE cxx_std_20)
 
 target_include_directories(altman PRIVATE
-        components
-        utils
-        utils/core
-        utils/network
-        utils/system
-        utils/ui
+        src/components
+        src/utils
+        src/utils/core
+        src/utils/network
+        src/utils/system
+        src/utils/ui
 )
 
 find_package(unofficial-webview2 CONFIG REQUIRED)
@@ -97,6 +97,6 @@ endif ()
 # Copy assets
 add_custom_command(TARGET altman POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/assets"
+        "${CMAKE_SOURCE_DIR}/src/assets"
         "$<TARGET_FILE_DIR:$<TARGET_NAME:altman>>/assets"
 )

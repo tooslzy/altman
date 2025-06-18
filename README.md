@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="assets/images/256x256.png" 
+    <img src="src/assets/images/256x256.png" 
             alt="Picture" 
             width="256" 
             height="256" 
@@ -29,7 +29,7 @@
 
 ## Preview
 
-![Altman Preview](assets/images/screenshot.png)
+![Altman Preview](src/assets/images/screenshot.png)
 
 ---
 
