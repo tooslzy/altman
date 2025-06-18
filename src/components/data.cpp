@@ -79,18 +79,41 @@ string decryptData(const vector<BYTE> &encryptedText) {
     return "";
 }
 
+static std::filesystem::path GetStorageDir() {
+    static std::filesystem::path dir;
+    if (dir.empty()) {
+        wchar_t exePath[MAX_PATH];
+        if (GetModuleFileNameW(nullptr, exePath, MAX_PATH)) {
+            dir = std::filesystem::path(exePath).parent_path() / L"storage";
+            std::error_code ec;
+            std::filesystem::create_directories(dir, ec);
+            if (ec) {
+                LOG_ERROR("Failed to create storage directory: " + ec.message());
+            }
+        } else {
+            dir = L"storage";
+        }
+    }
+    return dir;
+}
+
+static std::string MakePath(const std::string &filename) {
+    return (GetStorageDir() / filename).string();
+}
+
 namespace Data {
     void LoadAccounts(const string &filename) {
-        ifstream fileStream{filename};
+        string path = MakePath(filename);
+        ifstream fileStream{path};
         if (!fileStream.is_open()) {
-            LOG_INFO("No "+ filename + ", starting fresh");
+            LOG_INFO("No " + path + ", starting fresh");
             return;
         }
         json dataArray;
         try {
             fileStream >> dataArray;
         } catch (const json::parse_error &exception) {
-            LOG_ERROR("Failed to parse " + filename + ": " + exception.what());
+            LOG_ERROR("Failed to parse " + path + ": " + exception.what());
 
             return;
         }
@@ -141,9 +164,10 @@ namespace Data {
     }
 
     void SaveAccounts(const string &filename) {
-        ofstream out{filename};
+        string path = MakePath(filename);
+        ofstream out{path};
         if (!out.is_open()) {
-            LOG_ERROR("Could not open '" + filename + "' for writing");
+            LOG_ERROR("Could not open '" + path + "' for writing");
             return;
         }
 
@@ -180,9 +204,10 @@ namespace Data {
     }
 
     void LoadFavorites(const std::string &filename) {
-        std::ifstream fin{filename};
+        std::string path = MakePath(filename);
+        std::ifstream fin{path};
         if (!fin.is_open()) {
-            LOG_INFO("No " + filename + ", starting with 0 favourites");
+            LOG_INFO("No " + path + ", starting with 0 favourites");
             return;
         }
 
@@ -204,9 +229,10 @@ namespace Data {
     }
 
     void SaveFavorites(const std::string &filename) {
-        std::ofstream out{filename};
+        std::string path = MakePath(filename);
+        std::ofstream out{path};
         if (!out.is_open()) {
-            LOG_ERROR("Could not open '" + filename + "' for writing");
+            LOG_ERROR("Could not open '" + path + "' for writing");
             return;
         }
 
@@ -224,9 +250,10 @@ namespace Data {
     }
 
     void LoadSettings(const std::string &filename) {
-        std::ifstream fin{filename};
+        std::string path = MakePath(filename);
+        std::ifstream fin{path};
         if (!fin.is_open()) {
-            LOG_INFO("No " + filename + ", using no default account");
+            LOG_INFO("No " + path + ", using no default account");
             return;
         }
 
@@ -249,9 +276,10 @@ namespace Data {
         j["defaultAccountId"] = g_defaultAccountId;
         j["statusRefreshInterval"] = g_statusRefreshInterval;
         j["checkUpdatesOnStartup"] = g_checkUpdatesOnStartup;
-        std::ofstream out{filename};
+        std::string path = MakePath(filename);
+        std::ofstream out{path};
         if (!out.is_open()) {
-            LOG_ERROR("Could not open " + filename + " for writing");
+            LOG_ERROR("Could not open " + path + " for writing");
             return;
         }
         out << j.dump(4);
@@ -261,9 +289,10 @@ namespace Data {
     }
 
     void LoadFriends(const std::string &filename) {
-        std::ifstream fin{filename};
+        std::string path = MakePath(filename);
+        std::ifstream fin{path};
         if (!fin.is_open()) {
-            LOG_INFO("No " + filename + ", starting with empty friend lists");
+            LOG_INFO("No " + path + ", starting with empty friend lists");
             return;
         }
         try {
@@ -308,6 +337,7 @@ namespace Data {
     }
 
     void SaveFriends(const std::string &filename) {
+        std::string path = MakePath(filename);
         json jFriends = json::object();
         for (const auto &[acctId, friends] : g_accountFriends) {
             json arr = json::array();
@@ -330,9 +360,9 @@ namespace Data {
         j["friends"] = std::move(jFriends);
         j["unfriended"] = std::move(jUnfriended);
 
-        std::ofstream out{filename};
+        std::ofstream out{path};
         if (!out.is_open()) {
-            LOG_ERROR("Could not open '" + filename + "' for writing");
+            LOG_ERROR("Could not open '" + path + "' for writing");
             return;
         }
         out << j.dump(4);
@@ -340,10 +370,11 @@ namespace Data {
     }
 
     std::vector<LogInfo> LoadLogHistory(const std::string &filename) {
-        std::ifstream fin{filename};
+        std::string path = MakePath(filename);
+        std::ifstream fin{path};
         std::vector<LogInfo> logs;
         if (!fin.is_open()) {
-            LOG_INFO("No " + filename + ", starting with empty log history");
+            LOG_INFO("No " + path + ", starting with empty log history");
             return logs;
         }
 
@@ -375,9 +406,10 @@ namespace Data {
     }
 
     void SaveLogHistory(const std::vector<LogInfo> &logs, const std::string &filename) {
-        std::ofstream out{filename};
+        std::string path = MakePath(filename);
+        std::ofstream out{path};
         if (!out.is_open()) {
-            LOG_ERROR("Could not open '" + filename + "' for writing");
+            LOG_ERROR("Could not open '" + path + "' for writing");
             return;
         }
 
