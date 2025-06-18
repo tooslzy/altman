@@ -146,22 +146,22 @@ int WINAPI WinMain(
             }
         }
         for (auto &acct: g_accounts) {
-            if (!acct.userId.empty()) {
-                uint64_t uid = 0;
-                try {
-                    uid = std::stoull(acct.userId);
-                    if (acct.status != "Banned")
-                        acct.status = Roblox::getPresence(acct.cookie, uid);
-                    auto vs = Roblox::getVoiceChatStatus(acct.cookie);
-                    acct.voiceStatus = vs.status;
-                    acct.voiceBanExpiry = vs.bannedUntil;
-                } catch (const std::exception &e) {
-                    char errorMsg[256];
-                    snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(),
-                             e.what());
-                    LOG_ERROR(errorMsg);
-                    acct.status = "Error: Invalid UserID";
-                }
+            if (acct.status == "Banned" || acct.userId.empty())
+                continue;
+
+            uint64_t uid = 0;
+            try {
+                uid = std::stoull(acct.userId);
+                acct.status = Roblox::getPresence(acct.cookie, uid);
+                auto vs = Roblox::getVoiceChatStatus(acct.cookie);
+                acct.voiceStatus = vs.status;
+                acct.voiceBanExpiry = vs.bannedUntil;
+            } catch (const std::exception &e) {
+                char errorMsg[256];
+                snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(),
+                         e.what());
+                LOG_ERROR(errorMsg);
+                acct.status = "Error: Invalid UserID";
             }
         }
         Data::SaveAccounts();
