@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="assets/256x256.png" 
+    <img src="assets/images/256x256.png" 
             alt="Picture" 
             width="256" 
             height="256" 
@@ -29,7 +29,7 @@
 
 ## Preview
 
-![Altman Preview](assets/screenshot.png)
+![Altman Preview](assets/images/screenshot.png)
 
 ---
 
@@ -62,12 +62,6 @@
 
 * Windows 10 or 11 (Tested for Windows 11 24H2)
 * Active internet connection
-
----
-
-## Code Organization
-
-Utility helpers are organized in subfolders inside the `utils` directory: `core`, `network`, `system` and `ui`. Legacy headers remain at the root for backward compatibility.
 
 ---
 
