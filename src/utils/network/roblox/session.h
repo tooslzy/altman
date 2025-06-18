@@ -7,25 +7,29 @@
 
 #include "http.hpp"
 #include "core/logging.hpp"
+#include "auth.h"
 #include "status.h"
 
 
 namespace Roblox {
-	static std::string getPresence(
-		const std::string &cookie,
-		uint64_t userId) {
-		LOG_INFO("Fetching user presence");
-		nlohmann::json payload = {{"userIds", {userId}}};
-		HttpClient::Response response = HttpClient::post(
-			"https://presence.roproxy.com/v1/presence/users",
-			{{"Cookie", ".ROBLOSECURITY=" + cookie}},
-			payload.dump());
-		if (response.status_code != 200) {
-			LOG_ERROR("Presence lookup failed: HTTP " + std::to_string(response.status_code));
+        static std::string getPresence(
+                const std::string &cookie,
+                uint64_t userId) {
+                if (!canUseCookie(cookie))
+                        return "Banned";
 
-			if (response.status_code == 403) {
-				return "Banned";
-			}
+                LOG_INFO("Fetching user presence");
+                nlohmann::json payload = {{"userIds", {userId}}};
+                HttpClient::Response response = HttpClient::post(
+                        "https://presence.roproxy.com/v1/presence/users",
+                        {{"Cookie", ".ROBLOSECURITY=" + cookie}},
+                        payload.dump());
+                if (response.status_code < 200 || response.status_code >= 300) {
+                        LOG_ERROR("Presence lookup failed: HTTP " + std::to_string(response.status_code));
+
+                        if (response.status_code == 403) {
+                                return "Banned";
+                        }
 
 			return "Offline";
 		}
@@ -52,16 +56,19 @@ namespace Roblox {
 		time_t bannedUntil = 0;
 	};
 
-	static VoiceSettings getVoiceChatStatus(const std::string &cookie) {
-		LOG_INFO("Fetching voice chat settings");
-		auto resp = HttpClient::get(
-			"https://voice.roblox.com/v1/settings",
-			{{"Cookie", ".ROBLOSECURITY=" + cookie}}
-		);
+        static VoiceSettings getVoiceChatStatus(const std::string &cookie) {
+                if (!canUseCookie(cookie))
+                        return {"Banned", 0};
 
-		if (resp.status_code != 200) {
-			LOG_INFO("Failed to fetch voice settings: HTTP " +
-				std::to_string(resp.status_code));
+                LOG_INFO("Fetching voice chat settings");
+                auto resp = HttpClient::get(
+                        "https://voice.roblox.com/v1/settings",
+                        {{"Cookie", ".ROBLOSECURITY=" + cookie}}
+                );
+
+                if (resp.status_code < 200 || resp.status_code >= 300) {
+                        LOG_INFO("Failed to fetch voice settings: HTTP " +
+                                std::to_string(resp.status_code));
 			if (resp.status_code == 403)
 				return {"Banned", 0};
 			return {"Unknown", 0};
@@ -96,19 +103,22 @@ namespace Roblox {
 	};
 
 	static std::unordered_map<uint64_t, PresenceData>
-	getPresences(const std::vector<uint64_t> &userIds,
-	             const std::string &cookie) {
-		nlohmann::json payload = {{"userIds", userIds}};
+        getPresences(const std::vector<uint64_t> &userIds,
+                     const std::string &cookie) {
+                if (!canUseCookie(cookie))
+                        return {};
+
+                nlohmann::json payload = {{"userIds", userIds}};
 
 		auto resp = HttpClient::post(
 			"https://presence.roblox.com/v1/presence/users",
 			{{"Cookie", ".ROBLOSECURITY=" + cookie}},
 			payload.dump());
 
-		if (resp.status_code != 200) {
-			LOG_ERROR("Batch presence failed: HTTP " + std::to_string(resp.status_code));
-			return {};
-		}
+                if (resp.status_code < 200 || resp.status_code >= 300) {
+                        LOG_ERROR("Batch presence failed: HTTP " + std::to_string(resp.status_code));
+                        return {};
+                }
 
 		nlohmann::json j = HttpClient::decode(resp);
 		std::unordered_map<uint64_t, PresenceData> out;
