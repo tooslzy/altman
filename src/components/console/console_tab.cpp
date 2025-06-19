@@ -22,11 +22,9 @@ static string getCurrentTimestamp() {
 	auto now = chrono::system_clock::now();
 	auto in_time_t = chrono::system_clock::to_time_t(now);
 	std::tm buf{};
-#ifdef _WIN32
+
 	localtime_s(&buf, &in_time_t);
-#else
-    localtime_r(&in_time_t, &buf);
-#endif
+
 	ostringstream ss;
 	ss << put_time(&buf, "%H:%M:%S");
 	return ss.str();

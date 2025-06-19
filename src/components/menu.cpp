@@ -34,32 +34,32 @@ static void DisableMultiInstance() {
 
 
 bool RenderMainMenu() {
-        static array<char, 2048> s_cookieInputBuffer = {};
-        static bool s_openClearCachePopup = false;
+	static array<char, 2048> s_cookieInputBuffer = {};
+	static bool s_openClearCachePopup = false;
 
 	if (BeginMainMenuBar()) {
 		if (BeginMenu("Accounts")) {
-                        if (MenuItem("Refresh Statuses")) {
-                                Threading::newThread([] {
-                                        LOG_INFO("Refreshing account statuses...");
-                                        for (auto &acct: g_accounts) {
-                                                auto banStatus = Roblox::refreshBanStatus(acct.cookie);
-                                                if (banStatus == Roblox::BanCheckResult::Banned) {
-                                                        acct.status = "Banned";
-                                                        continue;
-                                                }
+			if (MenuItem("Refresh Statuses")) {
+				Threading::newThread([] {
+					LOG_INFO("Refreshing account statuses...");
+					for (auto &acct: g_accounts) {
+						auto banStatus = Roblox::refreshBanStatus(acct.cookie);
+						if (banStatus == Roblox::BanCheckResult::Banned) {
+							acct.status = "Banned";
+							continue;
+						}
 
-                                                if (!acct.userId.empty()) {
-                                                        acct.status = Roblox::getPresence(acct.cookie, stoull(acct.userId));
-                                                        auto vs = Roblox::getVoiceChatStatus(acct.cookie);
-                                                        acct.voiceStatus = vs.status;
-                                                        acct.voiceBanExpiry = vs.bannedUntil;
-                                                }
-                                        }
-                                        Data::SaveAccounts();
-                                        LOG_INFO("Refreshed account statuses");
-                                });
-                        }
+						if (!acct.userId.empty()) {
+							acct.status = Roblox::getPresence(acct.cookie, stoull(acct.userId));
+							auto vs = Roblox::getVoiceChatStatus(acct.cookie);
+							acct.voiceStatus = vs.status;
+							acct.voiceBanExpiry = vs.bannedUntil;
+						}
+					}
+					Data::SaveAccounts();
+					LOG_INFO("Refreshed account statuses");
+				});
+			}
 
 			Separator();
 
@@ -171,16 +171,12 @@ bool RenderMainMenu() {
 				LOG_INFO("Kill Roblox process completed.");
 			}
 
-                        if (MenuItem("Clear Roblox Cache")) {
-#ifdef _WIN32
-                                if (RobloxControl::IsRobloxRunning())
-                                        s_openClearCachePopup = true;
-                                else
-                                        Threading::newThread(RobloxControl::ClearRobloxCache);
-#else
-                                Threading::newThread(RobloxControl::ClearRobloxCache);
-#endif
-                        }
+			if (MenuItem("Clear Roblox Cache")) {
+				if (RobloxControl::IsRobloxRunning())
+					s_openClearCachePopup = true;
+				else
+					Threading::newThread(RobloxControl::ClearRobloxCache);
+			}
 
 			Separator();
 
@@ -197,36 +193,36 @@ bool RenderMainMenu() {
 			ImGui::EndMenu();
 		}
 
-                EndMainMenuBar();
-        }
+		EndMainMenuBar();
+	}
 
-        if (s_openClearCachePopup) {
-                OpenPopup("ClearCacheConfirm");
-                s_openClearCachePopup = false;
-        }
+	if (s_openClearCachePopup) {
+		OpenPopup("ClearCacheConfirm");
+		s_openClearCachePopup = false;
+	}
 
-        if (BeginPopupModal("ClearCacheConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-                TextWrapped("RobloxPlayerBeta is running. Do you want to kill it before clearing the cache?");
-                Spacing();
-                float killW = CalcTextSize("Kill").x + GetStyle().FramePadding.x * 2.0f;
-                float dontW = CalcTextSize("Don't kill").x + GetStyle().FramePadding.x * 2.0f;
-                float cancelW = CalcTextSize("Cancel").x + GetStyle().FramePadding.x * 2.0f;
-                if (Button("Kill", ImVec2(killW, 0))) {
-                        RobloxControl::KillRobloxProcesses();
-                        Threading::newThread(RobloxControl::ClearRobloxCache);
-                        CloseCurrentPopup();
-                }
-                SameLine(0, GetStyle().ItemSpacing.x);
-                if (Button("Don't kill", ImVec2(dontW, 0))) {
-                        Threading::newThread(RobloxControl::ClearRobloxCache);
-                        CloseCurrentPopup();
-                }
-                SameLine(0, GetStyle().ItemSpacing.x);
-                if (Button("Cancel", ImVec2(cancelW, 0))) {
-                        CloseCurrentPopup();
-                }
-                EndPopup();
-        }
+	if (BeginPopupModal("ClearCacheConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		TextWrapped("RobloxPlayerBeta is running. Do you want to kill it before clearing the cache?");
+		Spacing();
+		float killW = CalcTextSize("Kill").x + GetStyle().FramePadding.x * 2.0f;
+		float dontW = CalcTextSize("Don't kill").x + GetStyle().FramePadding.x * 2.0f;
+		float cancelW = CalcTextSize("Cancel").x + GetStyle().FramePadding.x * 2.0f;
+		if (Button("Kill", ImVec2(killW, 0))) {
+			RobloxControl::KillRobloxProcesses();
+			Threading::newThread(RobloxControl::ClearRobloxCache);
+			CloseCurrentPopup();
+		}
+		SameLine(0, GetStyle().ItemSpacing.x);
+		if (Button("Don't kill", ImVec2(dontW, 0))) {
+			Threading::newThread(RobloxControl::ClearRobloxCache);
+			CloseCurrentPopup();
+		}
+		SameLine(0, GetStyle().ItemSpacing.x);
+		if (Button("Cancel", ImVec2(cancelW, 0))) {
+			CloseCurrentPopup();
+		}
+		EndPopup();
+	}
 
 	if (BeginPopupModal("AddAccountPopup_Browser", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		Text("Browser-based account addition not yet implemented.");

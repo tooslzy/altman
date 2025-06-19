@@ -30,21 +30,16 @@ string friendlyTimestamp(const string &isoTimestamp) {
 	timeStruct.tm_min = stoi(isoTimestamp.substr(14, 2));
 	timeStruct.tm_sec = stoi(isoTimestamp.substr(17, 2));
 
-#ifdef _WIN32
 	time_t timeValue = _mkgmtime(&timeStruct);
-#else
-    time_t timeValue = timegm(&timeStruct);
-#endif
 
 	if (timeValue == static_cast<time_t>(-1))
 		return isoTimestamp;
+
 	tm localTime_val;
-#ifdef _WIN32
+
 	localtime_s(&localTime_val, &timeValue);
 	tm *localTime = &localTime_val;
-#else
-    tm *localTime = localtime(&timeValue);
-#endif
+
 	if (!localTime)
 		return isoTimestamp;
 
@@ -76,29 +71,21 @@ string niceLabel(const LogInfo &logInfo) {
 		timeStruct.tm_min = stoi(logInfo.timestamp.substr(14, 2));
 		timeStruct.tm_sec = stoi(logInfo.timestamp.substr(17, 2));
 
-#ifdef _WIN32
 		time_t timeValue = _mkgmtime(&timeStruct);
-#else
-        time_t timeValue = timegm(&timeStruct);
-#endif
 
 		if (timeValue != static_cast<time_t>(-1)) {
 			tm localTime_val;
-#ifdef _WIN32
+
 			localtime_s(&localTime_val, &timeValue);
 			tm *localTime = &localTime_val;
-#else
-            tm *localTime = localtime(&timeValue);
-#endif
-			if (localTime) {
-				int hour12 = localTime->tm_hour % 12;
-				if (hour12 == 0)
-					hour12 = 12;
-				ostringstream ss;
-				ss << hour12 << ':' << setfill('0') << setw(2) << localTime->tm_min
-						<< (localTime->tm_hour >= 12 ? " PM" : " AM");
-				return ss.str();
-			}
+
+			int hour12 = localTime->tm_hour % 12;
+			if (hour12 == 0)
+				hour12 = 12;
+			ostringstream ss;
+			ss << hour12 << ':' << setfill('0') << setw(2) << localTime->tm_min
+					<< (localTime->tm_hour >= 12 ? " PM" : " AM");
+			return ss.str();
 		}
 	}
 	return logInfo.fileName;
