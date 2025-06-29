@@ -14,6 +14,7 @@
 #include "system/launcher.hpp"
 #include "network/roblox.h"
 #include "core/status.h"
+#include "ui/webview.hpp"
 #include "ui/modal_popup.h"
 #include "../../ui.h"
 #include "../servers/servers_utils.h"
@@ -157,10 +158,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     ImGuiStyle &style = GetStyle();
                     float saveWidth = CalcTextSize("Save##RenameFavorite").x + style.FramePadding.x * 2.0f;
                     float cancelWidth = CalcTextSize("Cancel##RenameFavorite").x + style.FramePadding.x * 2.0f;
-                    float inputWidth = GetContentRegionAvail().x - saveWidth - cancelWidth - style.ItemSpacing.x;
-                    if (inputWidth < 200.0f)
-                        inputWidth = 200.0f;
-                    PushItemWidth(inputWidth);
+                    PushItemWidth(GetContentRegionAvail().x);
                     InputText("##RenameFavorite", renameBuffer, sizeof(renameBuffer));
                     PopItemWidth();
 
@@ -470,9 +468,9 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
             if (MenuItem("Roblox Page"))
                 LaunchWebview("https://www.roblox.com/games/" + to_string(gameInfo.placeId), "Game Page", g_accounts.empty() ? "" : g_accounts.front().cookie);
             if (MenuItem("Rolimons"))
-                ShellExecuteA(NULL, "open", ("https://www.rolimons.com/game/" + to_string(gameInfo.placeId) + "/").c_str(), NULL, NULL, SW_SHOWNORMAL);
+                LaunchWebview("https://www.rolimons.com/game/" + to_string(gameInfo.placeId) + "/", "Rolimons");
             if (MenuItem("RoMonitor"))
-                ShellExecuteA(NULL, "open", ("https://romonitorstats.com/experience/" + to_string(gameInfo.placeId) + "/").c_str(), NULL, NULL, SW_SHOWNORMAL);
+                LaunchWebview("https://romonitorstats.com/experience/" + to_string(gameInfo.placeId) + "/", "RoMonitor Stats");
             EndPopup();
         }
         Unindent(desiredTextIndent / 2);

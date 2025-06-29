@@ -509,7 +509,7 @@ void RenderFriendsTab() {
                 if (MenuItem("Inventory"))
                     LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/inventory/#!/accessories", "Inventory", acct.cookie);
                 if (MenuItem("Rolimons"))
-                    ShellExecuteA(NULL, "open", ("https://www.rolimons.com/player/" + to_string(D.id)).c_str(), NULL, NULL, SW_SHOWNORMAL);
+                    LaunchWebview("https://www.rolimons.com/player/" + to_string(D.id), "Rolimons");
                 EndPopup();
             }
             Unindent(desiredTextIndent / 2);
