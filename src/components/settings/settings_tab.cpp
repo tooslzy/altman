@@ -15,6 +15,7 @@ void RenderSettingsTab()
 {
         if (!g_accounts.empty())
         {
+                SeparatorText("Accounts");
                 Text("Default Account:");
 
 		vector<const char*> names;
@@ -48,6 +49,8 @@ void RenderSettingsTab()
                         }
                 }
 
+                Spacing();
+                SeparatorText("General");
                 int interval = g_statusRefreshInterval;
                 if (InputInt("Status Refresh Interval (min)", &interval))
                 {
@@ -66,6 +69,8 @@ void RenderSettingsTab()
                         Data::SaveSettings("settings.json");
                 }
 
+                Spacing();
+                SeparatorText("Launch Options");
                 bool multi = g_multiRobloxEnabled;
                 if (Checkbox("Multi Roblox", &multi))
                 {

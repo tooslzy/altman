@@ -476,9 +476,6 @@ void RenderFriendsTab() {
 
             bool canJoin = (row.presence == "InGame" && row.placeId && !row.gameId.empty());
             BeginDisabled(!canJoin);
-            PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 1.f, 0.4f, 1.f));
-            PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 1.f, 0.5f, 1.f));
-            PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.9f, 0.3f, 1.f));
             if (Button((string(ICON_JOIN) + " Join Game").c_str()) && canJoin) {
                 vector<pair<int, string> > accounts;
                 for (int id: g_selectedAccountIds) {
@@ -493,16 +490,18 @@ void RenderFriendsTab() {
                     });
                 }
             }
-            PopStyleColor(3);
             EndDisabled();
             SameLine();
-            if (Button((string(ICON_OPEN_LINK) + " Open Profile").c_str())) {
-                if (D.id)
-                    LaunchWebview(
-                        "https://www.roblox.com/users/" + to_string(D.id) + "/profile",
-                        "Roblox Profile", acct.cookie);
-            }
-            if (BeginPopupContextItem("ProfileContext")) {
+            bool openProfile = Button((string(ICON_OPEN_LINK) + " Open Profile").c_str());
+            if (openProfile)
+                OpenPopup("ProfileContext");
+            OpenPopupOnItemClick("ProfileContext");
+            if (BeginPopup("ProfileContext")) {
+                if (MenuItem("Profile"))
+                    if (D.id)
+                        LaunchWebview(
+                            "https://www.roblox.com/users/" + to_string(D.id) + "/profile",
+                            "Roblox Profile", acct.cookie);
                 if (MenuItem("Friends"))
                     LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/friends", "Friends", acct.cookie);
                 if (MenuItem("Favorites"))

@@ -30,6 +30,8 @@ static unordered_map<uint64_t, Roblox::GameDetail> gameDetailCache;
 static unordered_set<uint64_t> favoriteGameIds;
 static auto ICON_OPEN_LINK = "\xEF\x8A\xBB ";
 static auto ICON_JOIN = "\xEF\x8B\xB6 ";
+static auto ICON_LAUNCH = "\xEF\x84\xB5 ";
+static auto ICON_SERVER = "\xEF\x88\xB3 ";
 static vector<GameInfo> favoriteGamesList;
 static bool hasLoadedFavorites = false;
 static char renameBuffer[128] = "";
@@ -156,8 +158,8 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     float saveWidth = CalcTextSize("Save##RenameFavorite").x + style.FramePadding.x * 2.0f;
                     float cancelWidth = CalcTextSize("Cancel##RenameFavorite").x + style.FramePadding.x * 2.0f;
                     float inputWidth = GetContentRegionAvail().x - saveWidth - cancelWidth - style.ItemSpacing.x;
-                    if (inputWidth < 100.0f)
-                        inputWidth = 100.0f;
+                    if (inputWidth < 200.0f)
+                        inputWidth = 200.0f;
                     PushItemWidth(inputWidth);
                     InputText("##RenameFavorite", renameBuffer, sizeof(renameBuffer));
                     PopItemWidth();
@@ -226,6 +228,10 @@ static void RenderSearchResultsList(float listWidth, float availableHeight) {
             SetTooltip("Players: %s", formatWithCommas(game.playerCount).c_str());
 
         if (BeginPopupContextItem("GameContext")) {
+            if (MenuItem("Copy Place ID"))
+                SetClipboardText(to_string(game.placeId).c_str());
+            if (MenuItem("Copy Universe ID"))
+                SetClipboardText(to_string(game.universeId).c_str());
             if (MenuItem("Favorite") && !favoriteGameIds.contains(game.universeId)) {
                 favoriteGameIds.insert(game.universeId);
                 GameInfo favoriteGameInfo = game;
@@ -427,10 +433,7 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
         Separator();
 
         Indent(desiredTextIndent / 2);
-        PushStyleColor(ImGuiCol_Button, ImVec4(0.4f, 1.f, 0.4f, 1.f));
-        PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 1.f, 0.5f, 1.f));
-        PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.9f, 0.3f, 1.f));
-        if (Button("Launch Game")) {
+        if (Button((string(ICON_LAUNCH) + " Launch Game").c_str())) {
             if (!g_selectedAccountIds.empty()) {
                 vector<pair<int, string> > accounts;
                 for (int id: g_selectedAccountIds) {
@@ -452,18 +455,20 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 ModalPopup::Add("Select an account first.");
             }
         }
-        PopStyleColor(3);
         SameLine();
-        if (Button("View Servers")) {
+        if (Button((string(ICON_SERVER) + " View Servers").c_str())) {
             g_activeTab = Tab_Servers;
             g_targetPlaceId_ServersTab = gameInfo.placeId;
             g_targetUniverseId_ServersTab = gameInfo.universeId;
         }
         SameLine();
-        if (Button((string(ICON_OPEN_LINK) + " Open Page").c_str())) {
-            LaunchWebview("https://www.roblox.com/games/" + to_string(gameInfo.placeId), "Game Page", g_accounts.empty() ? "" : g_accounts.front().cookie);
-        }
-        if (BeginPopupContextItem("GamePageMenu")) {
+        bool openPageBtn = Button((string(ICON_OPEN_LINK) + " Open Page").c_str());
+        if (openPageBtn)
+            OpenPopup("GamePageMenu");
+        OpenPopupOnItemClick("GamePageMenu");
+        if (BeginPopup("GamePageMenu")) {
+            if (MenuItem("Roblox Page"))
+                LaunchWebview("https://www.roblox.com/games/" + to_string(gameInfo.placeId), "Game Page", g_accounts.empty() ? "" : g_accounts.front().cookie);
             if (MenuItem("Rolimons"))
                 ShellExecuteA(NULL, "open", ("https://www.rolimons.com/game/" + to_string(gameInfo.placeId) + "/").c_str(), NULL, NULL, SW_SHOWNORMAL);
             if (MenuItem("RoMonitor"))
