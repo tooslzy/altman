@@ -5,6 +5,8 @@
 #include <imgui.h>
 #include <array>
 #include <string>
+#include <vector>
+#include <filesystem>
 
 #include "network/roblox.h"
 #include "system/threading.h"
@@ -13,6 +15,8 @@
 #include "core/app_state.h"
 #include "components.h"
 #include "data.h"
+#include "backup.h"
+#include "ui/modal_popup.h"
 
 using namespace ImGui;
 using namespace std;
@@ -36,9 +40,28 @@ static void DisableMultiInstance() {
 bool RenderMainMenu() {
         static array<char, 2048> s_cookieInputBuffer = {};
         static bool s_openClearCachePopup = false;
+        static bool s_openExportPopup = false;
+        static bool s_openImportPopup = false;
+        static char s_password1[128] = "";
+        static char s_password2[128] = "";
+        static char s_importPassword[128] = "";
+        static std::vector<std::string> s_backupFiles;
+        static int s_selectedBackup = 0;
+        static bool s_refreshBackupList = false;
 
-	if (BeginMainMenuBar()) {
-		if (BeginMenu("Accounts")) {
+        if (BeginMainMenuBar()) {
+                if (BeginMenu("File")) {
+                        if (MenuItem("Export Backup")) {
+                                s_openExportPopup = true;
+                        }
+
+                        if (MenuItem("Import Backup")) {
+                                s_openImportPopup = true;
+                        }
+                        EndMenu();
+                }
+
+                if (BeginMenu("Accounts")) {
                         if (MenuItem("Refresh Statuses")) {
                                 Threading::newThread([] {
                                         LOG_INFO("Refreshing account statuses...");
@@ -182,7 +205,7 @@ bool RenderMainMenu() {
 #endif
                         }
 
-			Separator();
+                        Separator();
 
 			if (MenuItem("Multi Roblox  \xEF\x81\xB1", nullptr, &g_multiRobloxEnabled)) {
 				if (g_multiRobloxEnabled) {
@@ -228,13 +251,98 @@ bool RenderMainMenu() {
                 EndPopup();
         }
 
-	if (BeginPopupModal("AddAccountPopup_Browser", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		Text("Browser-based account addition not yet implemented.");
-		Separator();
-		if (Button("OK", ImVec2(120, 0)))
-			CloseCurrentPopup();
-		EndPopup();
-	}
+        if (BeginPopupModal("AddAccountPopup_Browser", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                Text("Browser-based account addition not yet implemented.");
+                Separator();
+                if (Button("OK", ImVec2(120, 0)))
+                        CloseCurrentPopup();
+                EndPopup();
+        }
+
+        if (s_openExportPopup) {
+                OpenPopup("ExportBackup");
+                s_openExportPopup = false;
+        }
+
+        if (BeginPopupModal("ExportBackup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                InputText("Password", s_password1, IM_ARRAYSIZE(s_password1), ImGuiInputTextFlags_Password);
+                InputText("Confirm", s_password2, IM_ARRAYSIZE(s_password2), ImGuiInputTextFlags_Password);
+                if (Button("Export")) {
+                        if (strcmp(s_password1, s_password2) == 0 && s_password1[0] != '\0') {
+                                if (Backup::Export(s_password1))
+                                        ModalPopup::Add("Backup saved.");
+                                else
+                                        ModalPopup::Add("Backup failed.");
+                                s_password1[0] = s_password2[0] = '\0';
+                                CloseCurrentPopup();
+                        } else {
+                                ModalPopup::Add("Passwords do not match.");
+                        }
+                }
+                SameLine();
+                if (Button("Cancel")) {
+                        CloseCurrentPopup();
+                }
+                EndPopup();
+        }
+
+        if (s_openImportPopup) {
+                OpenPopup("ImportBackup");
+                s_openImportPopup = false;
+                s_refreshBackupList = true;
+        }
+
+        if (BeginPopupModal("ImportBackup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                if (s_refreshBackupList) {
+                        s_backupFiles.clear();
+                        std::filesystem::path dir = Data::StorageFilePath("backups");
+                        std::error_code ec;
+                        std::filesystem::create_directories(dir, ec);
+                        for (const auto &entry : std::filesystem::directory_iterator(dir)) {
+                                if (entry.is_regular_file())
+                                        s_backupFiles.push_back(entry.path().filename().string());
+                        }
+                        std::sort(s_backupFiles.begin(), s_backupFiles.end());
+                        s_selectedBackup = 0;
+                        s_refreshBackupList = false;
+                }
+
+                if (s_backupFiles.empty()) {
+                        TextUnformatted("No backups found.");
+                } else {
+                        const char *current = s_backupFiles[s_selectedBackup].c_str();
+                        if (BeginCombo("File", current)) {
+                                for (int i = 0; i < (int)s_backupFiles.size(); ++i) {
+                                        bool selected = (i == s_selectedBackup);
+                                        if (Selectable(s_backupFiles[i].c_str(), selected))
+                                                s_selectedBackup = i;
+                                        if (selected)
+                                                SetItemDefaultFocus();
+                                }
+                                EndCombo();
+                        }
+                }
+                InputText("Password", s_importPassword, IM_ARRAYSIZE(s_importPassword), ImGuiInputTextFlags_Password);
+                if (Button("Import")) {
+                        std::string err;
+                        bool ok = false;
+                        if (!s_backupFiles.empty()) {
+                                std::string path = Data::StorageFilePath("backups/" + s_backupFiles[s_selectedBackup]);
+                                ok = Backup::Import(path, s_importPassword, &err);
+                        }
+                        if (ok)
+                                ModalPopup::Add("Import completed.");
+                        else
+                                ModalPopup::Add(err.empty() ? "Import failed." : err.c_str());
+                        s_importPassword[0] = '\0';
+                        CloseCurrentPopup();
+                }
+                SameLine();
+                if (Button("Cancel")) {
+                        CloseCurrentPopup();
+                }
+                EndPopup();
+        }
 
 	return false;
 }
