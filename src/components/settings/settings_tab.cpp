@@ -6,6 +6,7 @@
 #include "../components.h"
 #include "../data.h"
 #include "core/app_state.h"
+#include "../../utils/system/multi_instance.h"
 
 using namespace ImGui;
 using namespace std;
@@ -62,6 +63,19 @@ void RenderSettingsTab()
                 if (Checkbox("Check for updates on startup", &checkUpdates))
                 {
                         g_checkUpdatesOnStartup = checkUpdates;
+                        Data::SaveSettings("settings.json");
+                }
+
+                bool multi = g_multiRobloxEnabled;
+                if (Checkbox("Multi Roblox", &multi))
+                {
+                        g_multiRobloxEnabled = multi;
+#ifdef _WIN32
+                        if (g_multiRobloxEnabled)
+                                MultiInstance::Enable();
+                        else
+                                MultiInstance::Disable();
+#endif
                         Data::SaveSettings("settings.json");
                 }
 

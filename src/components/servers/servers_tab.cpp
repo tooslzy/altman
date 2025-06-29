@@ -269,7 +269,7 @@ void RenderServersTab() {
                     for (int id: g_selectedAccountIds) {
                         auto it = find_if(g_accounts.begin(), g_accounts.end(),
                                           [&](const AccountData &a) { return a.id == id; });
-                        if (it != g_accounts.end())
+                        if (it != g_accounts.end() && it->status != "Banned")
                             accounts.emplace_back(it->id, it->cookie);
                     }
                     if (!accounts.empty()) {
@@ -289,9 +289,6 @@ void RenderServersTab() {
             }
 
             if (BeginPopupContextItem("ServerRowContextMenu")) {
-                if (MenuItem("Copy Name")) {
-                    SetClipboardText(serverNameStr.c_str());
-                }
                 if (MenuItem("Copy Job ID")) {
                     SetClipboardText(srv.jobId.c_str());
                 }
@@ -299,6 +296,11 @@ void RenderServersTab() {
                     SetClipboardText(to_string(g_current_placeId_servers).c_str());
                 }
                 if (BeginMenu("Copy Launch Method")) {
+                    if (MenuItem("Browser Link")) {
+                        string link = "https://www.roblox.com/games/start?placeId=" + to_string(g_current_placeId_servers) +
+                                      "&gameInstanceId=" + srv.jobId;
+                        SetClipboardText(link.c_str());
+                    }
                     char buf[256];
                     snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
                              (unsigned long long) g_current_placeId_servers, srv.jobId.c_str());
@@ -311,11 +313,6 @@ void RenderServersTab() {
                     if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
                     ImGui::EndMenu();
                 }
-                if (MenuItem("Generate Invite Link")) {
-                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(g_current_placeId_servers) +
-                                  "&gameInstanceId=" + srv.jobId;
-                    SetClipboardText(link.c_str());
-                }
                 Separator();
                 if (MenuItem("Join Server")) {
                     if (!g_selectedAccountIds.empty()) {
@@ -323,7 +320,7 @@ void RenderServersTab() {
                         for (int id: g_selectedAccountIds) {
                             auto it = find_if(g_accounts.begin(), g_accounts.end(),
                                               [&](const AccountData &a) { return a.id == id; });
-                            if (it != g_accounts.end())
+                            if (it != g_accounts.end() && it->status != "Banned")
                                 accounts.emplace_back(it->id, it->cookie);
                         }
                         if (!accounts.empty()) {

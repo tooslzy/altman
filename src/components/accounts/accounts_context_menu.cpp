@@ -135,6 +135,11 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                 if (MenuItem("Copy Job ID"))
                     SetClipboardText(jobId.c_str());
                 if (BeginMenu("Copy Launch Method")) {
+                    if (MenuItem("Browser Link")) {
+                        string link = "https://www.roblox.com/games/start?placeId=" + to_string(placeId) +
+                                      "&gameInstanceId=" + jobId;
+                        SetClipboardText(link.c_str());
+                    }
                     char buf[256];
                     snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s", (unsigned long long) placeId,
                              jobId.c_str());
@@ -145,11 +150,6 @@ void RenderAccountContextMenu(AccountData &account, const string &unique_context
                                   ", \"" + jobId + "\")";
                     if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
                     ImGui::EndMenu();
-                }
-                if (MenuItem("Generate Invite Link")) {
-                    string link = "https://www.roblox.com/games/start?placeId=" + to_string(placeId) +
-                                  "&gameInstanceId=" + jobId;
-                    SetClipboardText(link.c_str());
                 }
                 Separator();
             }

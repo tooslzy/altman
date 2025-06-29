@@ -53,3 +53,21 @@ inline std::string formatCountdown(time_t timestamp) {
 	snprintf(buf, sizeof(buf), "%lld:%02lld", minutes, seconds);
 	return std::string(buf);
 }
+
+inline time_t parseIsoTimestamp(const std::string &isoRaw) {
+        std::string iso = isoRaw;
+        if (auto dot = iso.find('.'); dot != std::string::npos)
+                iso = iso.substr(0, dot) + 'Z';
+        if (auto plus = iso.find('+'); plus != std::string::npos)
+                iso = iso.substr(0, plus) + 'Z';
+        std::tm tm{};
+        std::istringstream ss(iso);
+        ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+        if (ss.fail())
+                return 0;
+#if defined(_WIN32)
+        return _mkgmtime(&tm);
+#else
+        return timegm(&tm);
+#endif
+}
