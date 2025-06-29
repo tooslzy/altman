@@ -58,7 +58,7 @@ bool RenderMainMenu() {
                         if (MenuItem("Import Backup")) {
                                 s_openImportPopup = true;
                         }
-                        EndMenu();
+                        ImGui::EndMenu();
                 }
 
                 if (BeginMenu("Accounts")) {

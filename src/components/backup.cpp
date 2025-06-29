@@ -1,7 +1,7 @@
 #include "backup.h"
 #include "data.h"
-#include "utils/core/logging.hpp"
-#include "utils/system/threading.h"
+#include "../utils/core/logging.hpp"
+#include "../utils/system/threading.h"
 #include "network/roblox.h"
 #include <nlohmann/json.hpp>
 #include <fstream>
@@ -37,7 +37,7 @@ std::string rleDecompress(const std::string &data) {
     std::string out;
     for (size_t i = 0; i + 1 < data.size(); i += 2) {
         char c = data[i];
-        unsigned char count = static_cast<unsigned char>(data[i + 1]);
+        auto count = static_cast<unsigned char>(data[i + 1]);
         out.append(count, c);
     }
     return out;
@@ -56,13 +56,9 @@ std::filesystem::path getBackupDir() {
 std::string buildBackupPath() {
     std::time_t t = std::time(nullptr);
     std::tm tm{};
-#ifdef _WIN32
     localtime_s(&tm, &t);
-#else
-    localtime_r(&t, &tm);
-#endif
     char buf[64];
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d-altman-backup.dat", &tm);
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d-backup.dat", &tm);
     auto path = getBackupDir() / buf;
     return path.string();
 }
@@ -118,19 +114,15 @@ bool Backup::Import(const std::string &file, const std::string &password, std::s
     }
     std::string compressed((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     std::string decrypted = xorEncrypt(rleDecompress(compressed), password);
+
     json j;
-    try {
-        j = json::parse(decrypted);
-    } catch (...) {
-        if (error) *error = "Invalid password.";
-        LOG_ERROR("Invalid password.");
-        return false;
-    }
+    j = json::parse(decrypted);
     if (!j.contains("accounts") || !j["accounts"].is_array()) {
-        LOG_ERROR("Invalid backup format");
+        LOG_ERROR("Failed to decrypt. Invalid password.");
         if (error && error->empty()) *error = "Invalid backup format";
         return false;
     }
+
     g_accounts.clear();
     for (auto &item : j["accounts"]) {
         AccountData acct;
