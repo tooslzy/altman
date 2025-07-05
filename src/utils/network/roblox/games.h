@@ -12,8 +12,9 @@
 
 
 namespace Roblox {
-	struct GameDetail {
-		std::string genre;
+        struct GameDetail {
+                std::string name;
+                std::string genre;
 		std::string description;
 		uint64_t visits = 0;
 		int maxPlayers = 0;
@@ -40,7 +41,8 @@ namespace Roblox {
 			json root = json::parse(resp.text);
 			if (root.contains("data") && root["data"].is_array() && !root["data"].empty()) {
 				const auto &j = root["data"][0];
-				d.genre = j.value("genre", "");
+                                d.name = j.value("name", "");
+                                d.genre = j.value("genre", "");
 				d.description = j.value("description", "");
 				d.visits = j.value("visits", 0ULL);
 				d.maxPlayers = j.value("maxPlayers", 0);

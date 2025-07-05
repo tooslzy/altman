@@ -14,6 +14,7 @@
 #include "system/launcher.hpp"
 #include "network/roblox.h"
 #include "core/status.h"
+#include "ui/webview.hpp"
 #include "ui/modal_popup.h"
 #include "../../ui.h"
 #include "../servers/servers_utils.h"
@@ -28,6 +29,10 @@ static vector<GameInfo> originalGamesList;
 static unordered_map<uint64_t, Roblox::GameDetail> gameDetailCache;
 
 static unordered_set<uint64_t> favoriteGameIds;
+static auto ICON_OPEN_LINK = "\xEF\x8A\xBB ";
+static auto ICON_JOIN = "\xEF\x8B\xB6 ";
+static auto ICON_LAUNCH = "\xEF\x84\xB5 ";
+static auto ICON_SERVER = "\xEF\x88\xB3 ";
 static vector<GameInfo> favoriteGamesList;
 static bool hasLoadedFavorites = false;
 static char renameBuffer[128] = "";
@@ -136,26 +141,12 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
             }
 
             if (BeginPopupContextItem("FavoriteContext")) {
-                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-                if (MenuItem("Unfavorite")) {
-                    uint64_t universeIdToRemove = game.universeId;
-                    favoriteGameIds.erase(universeIdToRemove);
-                    erase_if(favoriteGamesList,
-                             [&](const GameInfo &gameInfo) {
-                                 return gameInfo.universeId == universeIdToRemove;
-                             });
-
-                    if (selectedIndex == -1000 - index)
-                        selectedIndex = -1;
-
-                    erase_if(g_favorites,
-                             [&](const FavoriteGame &favoriteGame) {
-                                 return favoriteGame.universeId == universeIdToRemove;
-                             });
-                    Data::SaveFavorites();
-                    CloseCurrentPopup();
+                if (MenuItem("Copy Place ID")) {
+                    SetClipboardText(to_string(game.placeId).c_str());
                 }
-                PopStyleColor();
+                if (MenuItem("Copy Universe ID")) {
+                    SetClipboardText(to_string(game.universeId).c_str());
+                }
 
                 if (BeginMenu("Rename")) {
                     if (renamingUniverseId != game.universeId) {
@@ -167,10 +158,7 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     ImGuiStyle &style = GetStyle();
                     float saveWidth = CalcTextSize("Save##RenameFavorite").x + style.FramePadding.x * 2.0f;
                     float cancelWidth = CalcTextSize("Cancel##RenameFavorite").x + style.FramePadding.x * 2.0f;
-                    float inputWidth = GetContentRegionAvail().x - saveWidth - cancelWidth - style.ItemSpacing.x;
-                    if (inputWidth < 100.0f)
-                        inputWidth = 100.0f;
-                    PushItemWidth(inputWidth);
+                    PushItemWidth(GetContentRegionAvail().x);
                     InputText("##RenameFavorite", renameBuffer, sizeof(renameBuffer));
                     PopItemWidth();
 
@@ -195,6 +183,27 @@ static void RenderFavoritesList(float listWidth, float availableHeight) {
                     }
                     ImGui::EndMenu();
                 }
+                Separator();
+                PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
+                if (MenuItem("Unfavorite")) {
+                    uint64_t universeIdToRemove = game.universeId;
+                    favoriteGameIds.erase(universeIdToRemove);
+                    erase_if(favoriteGamesList,
+                             [&](const GameInfo &gameInfo) {
+                                 return gameInfo.universeId == universeIdToRemove;
+                             });
+
+                    if (selectedIndex == -1000 - index)
+                        selectedIndex = -1;
+
+                    erase_if(g_favorites,
+                             [&](const FavoriteGame &favoriteGame) {
+                                 return favoriteGame.universeId == universeIdToRemove;
+                             });
+                    Data::SaveFavorites();
+                    CloseCurrentPopup();
+                }
+                PopStyleColor();
                 EndPopup();
             }
             PopID();
@@ -217,6 +226,10 @@ static void RenderSearchResultsList(float listWidth, float availableHeight) {
             SetTooltip("Players: %s", formatWithCommas(game.playerCount).c_str());
 
         if (BeginPopupContextItem("GameContext")) {
+            if (MenuItem("Copy Place ID"))
+                SetClipboardText(to_string(game.placeId).c_str());
+            if (MenuItem("Copy Universe ID"))
+                SetClipboardText(to_string(game.universeId).c_str());
             if (MenuItem("Favorite") && !favoriteGameIds.contains(game.universeId)) {
                 favoriteGameIds.insert(game.universeId);
                 GameInfo favoriteGameInfo = game;
@@ -347,7 +360,8 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
                 Unindent(desiredTextIndent);
             };
 
-            addRow("Name:", gameInfo.name);
+            string displayName = detailInfo.name.empty() ? gameInfo.name : detailInfo.name;
+            addRow("Name:", displayName);
             addRow("Place ID:", to_string(gameInfo.placeId));
             addRow("Universe ID:", to_string(gameInfo.universeId));
             const ImVec4 verifiedColor = ImVec4(0.031f, 0.392f, 0.988f, 1.f); // #0864fc
@@ -417,13 +431,13 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
         Separator();
 
         Indent(desiredTextIndent / 2);
-        if (Button("Launch Game")) {
+        if (Button((string(ICON_LAUNCH) + " Launch Game").c_str())) {
             if (!g_selectedAccountIds.empty()) {
                 vector<pair<int, string> > accounts;
                 for (int id: g_selectedAccountIds) {
                     auto it = find_if(g_accounts.begin(), g_accounts.end(),
                                       [&](const AccountData &a) { return a.id == id; });
-                    if (it != g_accounts.end())
+                    if (it != g_accounts.end() && it->status != "Banned")
                         accounts.emplace_back(it->id, it->cookie);
                 }
                 if (!accounts.empty()) {
@@ -440,10 +454,24 @@ static void RenderGameDetailsPanel(float panelWidth, float availableHeight) {
             }
         }
         SameLine();
-        if (Button("View Servers")) {
+        if (Button((string(ICON_SERVER) + " View Servers").c_str())) {
             g_activeTab = Tab_Servers;
             g_targetPlaceId_ServersTab = gameInfo.placeId;
             g_targetUniverseId_ServersTab = gameInfo.universeId;
+        }
+        SameLine();
+        bool openPageBtn = Button((string(ICON_OPEN_LINK) + " Open Page").c_str());
+        if (openPageBtn)
+            OpenPopup("GamePageMenu");
+        OpenPopupOnItemClick("GamePageMenu");
+        if (BeginPopup("GamePageMenu")) {
+            if (MenuItem("Roblox Page"))
+                LaunchWebview("https://www.roblox.com/games/" + to_string(gameInfo.placeId), "Game Page", g_accounts.empty() ? "" : g_accounts.front().cookie);
+            if (MenuItem("Rolimons"))
+                LaunchWebview("https://www.rolimons.com/game/" + to_string(gameInfo.placeId) + "/", "Rolimons");
+            if (MenuItem("RoMonitor"))
+                LaunchWebview("https://romonitorstats.com/experience/" + to_string(gameInfo.placeId) + "/", "RoMonitor Stats");
+            EndPopup();
         }
         Unindent(desiredTextIndent / 2);
     } else {

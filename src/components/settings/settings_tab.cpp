@@ -6,6 +6,7 @@
 #include "../components.h"
 #include "../data.h"
 #include "core/app_state.h"
+#include "../../utils/system/multi_instance.h"
 
 using namespace ImGui;
 using namespace std;
@@ -14,6 +15,7 @@ void RenderSettingsTab()
 {
         if (!g_accounts.empty())
         {
+                SeparatorText("Accounts");
                 Text("Default Account:");
 
 		vector<const char*> names;
@@ -47,6 +49,8 @@ void RenderSettingsTab()
                         }
                 }
 
+                Spacing();
+                SeparatorText("General");
                 int interval = g_statusRefreshInterval;
                 if (InputInt("Status Refresh Interval (min)", &interval))
                 {
@@ -62,6 +66,21 @@ void RenderSettingsTab()
                 if (Checkbox("Check for updates on startup", &checkUpdates))
                 {
                         g_checkUpdatesOnStartup = checkUpdates;
+                        Data::SaveSettings("settings.json");
+                }
+
+                Spacing();
+                SeparatorText("Launch Options");
+                bool multi = g_multiRobloxEnabled;
+                if (Checkbox("Multi Roblox", &multi))
+                {
+                        g_multiRobloxEnabled = multi;
+#ifdef _WIN32
+                        if (g_multiRobloxEnabled)
+                                MultiInstance::Enable();
+                        else
+                                MultiInstance::Disable();
+#endif
                         Data::SaveSettings("settings.json");
                 }
 

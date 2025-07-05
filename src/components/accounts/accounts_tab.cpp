@@ -92,20 +92,23 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			char selectable_label[64];
 			snprintf(selectable_label, sizeof(selectable_label), "##row_selectable_%d", account.id);
 
-			if (Selectable(
-				selectable_label,
-				is_row_selected,
-				ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
-				ImVec2(0, row_interaction_height))) {
-				if (GetIO().KeyCtrl) {
-					if (is_row_selected) g_selectedAccountIds.erase(account.id);
-					else g_selectedAccountIds.insert(account.id);
-				} else {
-					bool was_already_solely_selected = (is_row_selected && g_selectedAccountIds.size() == 1);
-					g_selectedAccountIds.clear();
-					if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
-				}
-			}
+                        bool banned = account.status == "Banned";
+                        BeginDisabled(banned);
+                        if (Selectable(
+                                selectable_label,
+                                is_row_selected,
+                                ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+                                ImVec2(0, row_interaction_height))) {
+                                if (GetIO().KeyCtrl) {
+                                        if (is_row_selected) g_selectedAccountIds.erase(account.id);
+                                        else g_selectedAccountIds.insert(account.id);
+                                } else {
+                                        bool was_already_solely_selected = (is_row_selected && g_selectedAccountIds.size() == 1);
+                                        g_selectedAccountIds.clear();
+                                        if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
+                                }
+                        }
+                        EndDisabled();
 
 			static std::unordered_map<int, double> holdStartTimes;
 			if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
@@ -173,8 +176,18 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			render_centered_text_in_cell(account.username.c_str());
 			render_centered_text_in_cell(account.userId.c_str());
 
-			ImVec4 statusColor = getStatusColor(account.status);
-			render_centered_text_in_cell(account.status.c_str(), &statusColor);
+                        ImVec4 statusColor = getStatusColor(account.status);
+                        TableNextColumn();
+                        float status_y = GetCursorPosY();
+                        SetCursorPosY(status_y + vertical_padding);
+                        TextColored(statusColor, "%s", account.status.c_str());
+                        if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered()) {
+                                BeginTooltip();
+                                string timeStr = formatRelativeFuture(account.banExpiry);
+                                TextUnformatted(timeStr.c_str());
+                                EndTooltip();
+                        }
+                        SetCursorPosY(status_y + row_interaction_height);
 
 			TableNextColumn();
 			float voice_y = GetCursorPosY();

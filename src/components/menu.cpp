@@ -11,6 +11,7 @@
 #include "network/roblox.h"
 #include "system/threading.h"
 #include "system/roblox_control.h"
+#include "system/multi_instance.h"
 #include "ui/confirm.h"
 #include "core/app_state.h"
 #include "components.h"
@@ -22,19 +23,6 @@ using namespace ImGui;
 using namespace std;
 
 bool g_multiRobloxEnabled = false;
-static HANDLE g_hMutex = nullptr;
-
-static void EnableMultiInstance() {
-	if (!g_hMutex)
-		g_hMutex = CreateMutexW(nullptr, FALSE, L"ROBLOX_singletonEvent");
-}
-
-static void DisableMultiInstance() {
-	if (g_hMutex) {
-		CloseHandle(g_hMutex);
-		g_hMutex = nullptr;
-	}
-}
 
 
 bool RenderMainMenu() {
@@ -201,19 +189,7 @@ bool RenderMainMenu() {
 					Threading::newThread(RobloxControl::ClearRobloxCache);
 			}
 
-                        Separator();
-
-			if (MenuItem("Multi Roblox  \xEF\x81\xB1", nullptr, &g_multiRobloxEnabled)) {
-				if (g_multiRobloxEnabled) {
-					EnableMultiInstance();
-					LOG_INFO("Multi Roblox enabled.");
-				} else {
-					DisableMultiInstance();
-					LOG_INFO("Multi Roblox disabled.");
-				}
-			}
-
-			ImGui::EndMenu();
+                        ImGui::EndMenu();
 		}
 
 		EndMainMenuBar();
