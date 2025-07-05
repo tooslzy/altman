@@ -24,8 +24,8 @@ set<int> g_selectedAccountIds;
 
 vector<FavoriteGame> g_favorites;
 vector<FriendInfo> g_friends;
-unordered_map<int, vector<FriendInfo>> g_accountFriends;
-unordered_map<int, vector<FriendInfo>> g_unfriendedFriends;
+unordered_map<int, vector<FriendInfo> > g_accountFriends;
+unordered_map<int, vector<FriendInfo> > g_unfriendedFriends;
 
 int g_defaultAccountId = -1;
 array<char, 128> s_jobIdBuffer = {};
@@ -312,13 +312,14 @@ namespace Data {
             return;
         }
         try {
-            json j; fin >> j;
+            json j;
+            fin >> j;
             g_accountFriends.clear();
             g_unfriendedFriends.clear();
 
             auto parseList = [](const json &arr) {
                 std::vector<FriendInfo> out;
-                for (auto &f : arr) {
+                for (auto &f: arr) {
                     FriendInfo fi;
                     fi.id = f.value("id", 0ULL);
                     fi.username = f.value("username", "");
@@ -355,18 +356,18 @@ namespace Data {
     void SaveFriends(const std::string &filename) {
         std::string path = MakePath(filename);
         json jFriends = json::object();
-        for (const auto &[acctId, friends] : g_accountFriends) {
+        for (const auto &[acctId, friends]: g_accountFriends) {
             json arr = json::array();
-            for (const auto &f : friends) {
+            for (const auto &f: friends) {
                 arr.push_back({{"id", f.id}, {"username", f.username}, {"displayName", f.displayName}});
             }
             jFriends[std::to_string(acctId)] = std::move(arr);
         }
 
         json jUnfriended = json::object();
-        for (const auto &[acctId, list] : g_unfriendedFriends) {
+        for (const auto &[acctId, list]: g_unfriendedFriends) {
             json arr = json::array();
-            for (const auto &f : list) {
+            for (const auto &f: list) {
                 arr.push_back({{"id", f.id}, {"username", f.username}, {"displayName", f.displayName}});
             }
             jUnfriended[std::to_string(acctId)] = std::move(arr);
@@ -395,8 +396,9 @@ namespace Data {
         }
 
         try {
-            json arr; fin >> arr;
-            for (auto &j : arr) {
+            json arr;
+            fin >> arr;
+            for (auto &j: arr) {
                 LogInfo info;
                 info.fileName = j.value("fileName", "");
                 info.fullPath = j.value("fullPath", "");
@@ -430,7 +432,7 @@ namespace Data {
         }
 
         json arr = json::array();
-        for (const auto &log : logs) {
+        for (const auto &log: logs) {
             arr.push_back({
                 {"fileName", log.fileName},
                 {"fullPath", log.fullPath},

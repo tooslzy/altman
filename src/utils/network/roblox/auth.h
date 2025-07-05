@@ -13,70 +13,66 @@
 
 
 namespace Roblox {
-        enum class BanCheckResult {
-                InvalidCookie,
-                Unbanned,
-                Banned
-        };
+	enum class BanCheckResult {
+		InvalidCookie,
+		Unbanned,
+		Banned
+	};
 
-        struct BanInfo {
-                BanCheckResult status = BanCheckResult::InvalidCookie;
-                time_t endDate = 0;
-        };
+	struct BanInfo {
+		BanCheckResult status = BanCheckResult::InvalidCookie;
+		time_t endDate = 0;
+	};
 
-        // Cache for ban check results so we don't hit the endpoint repeatedly.
-        inline std::mutex g_banStatusMutex;
-        inline std::unordered_map<std::string, BanCheckResult> g_banStatusCache;
+	// Cache for ban check results so we don't hit the endpoint repeatedly.
+	inline std::mutex g_banStatusMutex;
+	inline std::unordered_map<std::string, BanCheckResult> g_banStatusCache;
 
-        static BanInfo checkBanStatus(const std::string &cookie) {
-                LOG_INFO("Checking moderation status");
-                HttpClient::Response response = HttpClient::get(
-                        "https://usermoderation.roblox.com/v1/not-approved",
-                        {{"Cookie", ".ROBLOSECURITY=" + cookie}});
+	static BanInfo checkBanStatus(const std::string &cookie) {
+		LOG_INFO("Checking moderation status");
+		HttpClient::Response response = HttpClient::get(
+			"https://usermoderation.roblox.com/v1/not-approved",
+			{{"Cookie", ".ROBLOSECURITY=" + cookie}});
 
-                if (response.status_code < 200 || response.status_code >= 300) {
-                        LOG_ERROR("Failed moderation check: HTTP " + std::to_string(response.status_code));
-                        return {BanCheckResult::InvalidCookie, 0};
-                }
+		if (response.status_code < 200 || response.status_code >= 300) {
+			LOG_ERROR("Failed moderation check: HTTP " + std::to_string(response.status_code));
+			return {BanCheckResult::InvalidCookie, 0};
+		}
 
-                auto j = HttpClient::decode(response);
-                if (j.is_object() && j.contains("punishmentTypeDescription")) {
-                        time_t end = 0;
-                        if (j.contains("endDate") && j["endDate"].is_string())
-                                end = parseIsoTimestamp(j["endDate"].get<std::string>());
-                        return {BanCheckResult::Banned, end};
-                }
-                if (j.empty())
-                        return {BanCheckResult::Unbanned, 0};
-                return {BanCheckResult::Unbanned, 0};
-        }
+		auto j = HttpClient::decode(response);
+		if (j.is_object() && j.contains("punishmentTypeDescription")) {
+			time_t end = 0;
+			if (j.contains("endDate") && j["endDate"].is_string())
+				end = parseIsoTimestamp(j["endDate"].get<std::string>());
+			return {BanCheckResult::Banned, end};
+		}
+		if (j.empty())
+			return {BanCheckResult::Unbanned, 0};
+		return {BanCheckResult::Unbanned, 0};
+	}
 
-        static BanCheckResult cachedBanStatus(const std::string &cookie) {
-                {
-                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
-                        auto it = g_banStatusCache.find(cookie);
-                        if (it != g_banStatusCache.end())
-                                return it->second;
-                }
+	static BanCheckResult cachedBanStatus(const std::string &cookie) { {
+			std::lock_guard<std::mutex> lock(g_banStatusMutex);
+			auto it = g_banStatusCache.find(cookie);
+			if (it != g_banStatusCache.end())
+				return it->second;
+		}
 
-                BanCheckResult status = checkBanStatus(cookie).status;
+		BanCheckResult status = checkBanStatus(cookie).status; {
+			std::lock_guard<std::mutex> lock(g_banStatusMutex);
+			g_banStatusCache[cookie] = status;
+		}
+		return status;
+	}
 
-                {
-                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
-                        g_banStatusCache[cookie] = status;
-                }
-                return status;
-        }
-
-        // Force refresh the cached ban status for a cookie
-        static BanCheckResult refreshBanStatus(const std::string &cookie) {
-                BanCheckResult status = checkBanStatus(cookie).status;
-                {
-                        std::lock_guard<std::mutex> lock(g_banStatusMutex);
-                        g_banStatusCache[cookie] = status;
-                }
-                return status;
-        }
+	// Force refresh the cached ban status for a cookie
+	static BanCheckResult refreshBanStatus(const std::string &cookie) {
+		BanCheckResult status = checkBanStatus(cookie).status; {
+			std::lock_guard<std::mutex> lock(g_banStatusMutex);
+			g_banStatusCache[cookie] = status;
+		}
+		return status;
+	}
 
 
 	static bool isCookieValid(const std::string &cookie) {

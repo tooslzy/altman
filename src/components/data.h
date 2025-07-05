@@ -16,10 +16,10 @@ struct AccountData {
 	std::string username;
 	std::string userId;
 	std::string status;
-        std::string voiceStatus;
-        time_t voiceBanExpiry = 0;
-        time_t banExpiry = 0;
-        std::string note;
+	std::string voiceStatus;
+	time_t voiceBanExpiry = 0;
+	time_t banExpiry = 0;
+	std::string note;
 	std::string cookie;
 	bool isFavorite = false;
 };
@@ -76,9 +76,9 @@ namespace Data {
 
 	std::vector<LogInfo> LoadLogHistory(const std::string &filename = "log_history.json");
 
-        void SaveLogHistory(const std::vector<LogInfo> &logs, const std::string &filename = "log_history.json");
+	void SaveLogHistory(const std::vector<LogInfo> &logs, const std::string &filename = "log_history.json");
 
-        std::string StorageFilePath(const std::string &filename);
+	std::string StorageFilePath(const std::string &filename);
 }
 
 #endif
