@@ -135,14 +135,16 @@ int WINAPI WinMain(
         for (auto &acct: g_accounts) {
             if (acct.cookie.empty())
                 continue;
-            auto banStatus = Roblox::checkBanStatus(acct.cookie);
-            if (banStatus == Roblox::BanCheckResult::InvalidCookie) {
+            auto banInfo = Roblox::checkBanStatus(acct.cookie);
+            if (banInfo.status == Roblox::BanCheckResult::InvalidCookie) {
                 invalidIds.push_back(acct.id);
                 if (!names.empty())
                     names += ", ";
                 names += acct.displayName.empty() ? acct.username : acct.displayName;
-            } else if (banStatus == Roblox::BanCheckResult::Banned) {
+            } else if (banInfo.status == Roblox::BanCheckResult::Banned) {
                 acct.status = "Banned";
+                acct.banExpiry = banInfo.endDate;
+                g_selectedAccountIds.erase(acct.id);
             }
         }
         for (auto &acct: g_accounts) {
@@ -156,6 +158,7 @@ int WINAPI WinMain(
                 auto vs = Roblox::getVoiceChatStatus(acct.cookie);
                 acct.voiceStatus = vs.status;
                 acct.voiceBanExpiry = vs.bannedUntil;
+                acct.banExpiry = 0;
             } catch (const std::exception &e) {
                 char errorMsg[256];
                 snprintf(errorMsg, sizeof(errorMsg), "Error converting userId %s: %s", acct.userId.c_str(),

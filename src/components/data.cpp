@@ -12,6 +12,7 @@
 
 #include "core/base64.h"
 #include "core/logging.hpp"
+#include "core/app_state.h"
 
 #pragma comment(lib, "Crypt32.lib")
 
@@ -130,6 +131,7 @@ namespace Data {
             account.status = item.value("status", "");
             account.voiceStatus = item.value("voiceStatus", "");
             account.voiceBanExpiry = item.value("voiceBanExpiry", 0);
+            account.banExpiry = item.value("banExpiry", 0);
             account.note = item.value("note", "");
             account.isFavorite = item.value("isFavorite", false);
 
@@ -196,6 +198,7 @@ namespace Data {
                 {"status", account.status},
                 {"voiceStatus", account.voiceStatus},
                 {"voiceBanExpiry", account.voiceBanExpiry},
+                {"banExpiry", account.banExpiry},
                 {"note", account.note},
                 {"encryptedCookie", b64EncryptedCookie},
                 {"isFavorite", account.isFavorite}
@@ -267,6 +270,7 @@ namespace Data {
             g_checkUpdatesOnStartup = j.value("checkUpdatesOnStartup", true);
             g_killRobloxOnLaunch = j.value("killRobloxOnLaunch", false);
             g_clearCacheOnLaunch = j.value("clearCacheOnLaunch", false);
+            g_multiRobloxEnabled = j.value("multiRobloxEnabled", false);
             LOG_INFO("Default account ID = " + std::to_string(g_defaultAccountId));
             LOG_INFO("Status refresh interval = " + std::to_string(g_statusRefreshInterval));
             LOG_INFO("Check updates on startup = " + std::string(g_checkUpdatesOnStartup ? "true" : "false"));
@@ -284,6 +288,7 @@ namespace Data {
         j["checkUpdatesOnStartup"] = g_checkUpdatesOnStartup;
         j["killRobloxOnLaunch"] = g_killRobloxOnLaunch;
         j["clearCacheOnLaunch"] = g_clearCacheOnLaunch;
+        j["multiRobloxEnabled"] = g_multiRobloxEnabled;
         std::string path = MakePath(filename);
         std::ofstream out{path};
         if (!out.is_open()) {
@@ -296,6 +301,7 @@ namespace Data {
         LOG_INFO("Saved checkUpdatesOnStartup=" + std::string(g_checkUpdatesOnStartup ? "true" : "false"));
         LOG_INFO("Saved killRobloxOnLaunch=" + std::string(g_killRobloxOnLaunch ? "true" : "false"));
         LOG_INFO("Saved clearCacheOnLaunch=" + std::string(g_clearCacheOnLaunch ? "true" : "false"));
+        LOG_INFO("Saved multiRobloxEnabled=" + std::string(g_multiRobloxEnabled ? "true" : "false"));
     }
 
     void LoadFriends(const std::string &filename) {
