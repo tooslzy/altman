@@ -7,7 +7,6 @@
 #include <utility>
 #include <cctype>
 
-
 #include "../data.h"
 #include "network/roblox.h"
 #include "system/launcher.hpp"
@@ -29,6 +28,10 @@ static vector<FriendInfo> g_unfriended;
 
 static int g_lastAcctIdForFriends = -1;
 
+// Account whose friends list is currently being viewed. Defaults to the first
+// selected account but can be changed via the UI combo box.
+static int g_viewAcctId = -1;
+
 static auto ICON_TOOL = "\xEF\x82\xAD ";
 static auto ICON_PERSON = "\xEF\x80\x87 ";
 static auto ICON_CONTROLLER = "\xEF\x84\x9B ";
@@ -45,7 +48,8 @@ static atomic<bool> s_addFriendLoading{false};
 static inline string trim_copy(string s) {
     size_t start = s.find_first_not_of(" \t\n\r");
     size_t end = s.find_last_not_of(" \t\n\r");
-    if (start == string::npos) return "";
+    if (start == string::npos)
+        return "";
     return s.substr(start, end - start + 1);
 }
 
@@ -59,13 +63,18 @@ static const char *presenceIcon(const string &p) {
     return "";
 }
 
-
 void RenderFriendsTab() {
     if (g_selectedAccountIds.empty()) {
         TextDisabled("Select an account in the Accounts tab to view its friends.");
         return;
     }
-    int currentAcctId = *g_selectedAccountIds.begin();
+
+    if (g_viewAcctId == -1 || std::none_of(g_accounts.begin(), g_accounts.end(),
+                                           [&](const AccountData &a) { return a.id == g_viewAcctId; })) {
+        g_viewAcctId = *g_selectedAccountIds.begin();
+    }
+
+    int currentAcctId = g_viewAcctId;
     auto it = find_if(g_accounts.begin(), g_accounts.end(),
                       [&](auto &a) {
                           return a.id == currentAcctId;
@@ -91,7 +100,38 @@ void RenderFriendsTab() {
                                  ref(g_friends),
                                  ref(g_friendsLoading));
         }
+    } {
+        float maxLabelWidth = 0.0f;
+        for (const auto &acc: g_accounts) {
+            const string &labelStr = acc.displayName.empty() ? acc.username : acc.displayName;
+            float w = CalcTextSize(labelStr.c_str()).x;
+            if (w > maxLabelWidth)
+                maxLabelWidth = w;
+        }
+        ImGuiStyle &style = GetStyle();
+
+        float comboWidth = maxLabelWidth + style.FramePadding.x * 2.0f + GetFrameHeight();
+
+        SetNextItemWidth(comboWidth);
+
+        PushID("AccountSelectorCombo");
+        const char *currentLabel = acct.displayName.empty() ? acct.username.c_str() : acct.displayName.c_str();
+        if (BeginCombo("##AccountSelector", currentLabel)) {
+            for (const auto &acc: g_accounts) {
+                const char *label = acc.displayName.empty() ? acc.username.c_str() : acc.displayName.c_str();
+                bool isSelected = (acc.id == g_viewAcctId);
+                if (Selectable(label, isSelected)) {
+                    g_viewAcctId = acc.id;
+                }
+                if (isSelected)
+                    SetItemDefaultFocus();
+            }
+            EndCombo();
+        }
+        PopID();
     }
+
+    SameLine();
 
     BeginDisabled(g_friendsLoading.load());
     if (Button((string(ICON_REFRESH) + " Refresh").c_str()) && !acct.userId.empty()) {
@@ -174,7 +214,8 @@ void RenderFriendsTab() {
 
             string label;
             const char *icon = presenceIcon(f.presence);
-            if (*icon) label += icon;
+            if (*icon)
+                label += icon;
             label += (f.displayName == f.username || f.displayName.empty())
                          ? f.username
                          : (f.displayName + " (" + f.username + ")");
@@ -235,13 +276,16 @@ void RenderFriendsTab() {
                         char buf[256];
                         snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
                                  (unsigned long long) f.placeId, f.gameId.c_str());
-                        if (MenuItem("Deep Link")) SetClipboardText(buf);
+                        if (MenuItem("Deep Link"))
+                            SetClipboardText(buf);
                         string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId +
                                     "\")";
-                        if (MenuItem("JavaScript")) SetClipboardText(js.c_str());
+                        if (MenuItem("JavaScript"))
+                            SetClipboardText(js.c_str());
                         string luau = "game:GetService(\"TeleportService\"):TeleportToPlaceInstance(" +
                                       to_string(f.placeId) + ", \"" + f.gameId + "\")";
-                        if (MenuItem("ROBLOX Luau")) SetClipboardText(luau.c_str());
+                        if (MenuItem("ROBLOX Luau"))
+                            SetClipboardText(luau.c_str());
                         ImGui::EndMenu();
                     }
                 }
@@ -259,8 +303,11 @@ void RenderFriendsTab() {
                             string resp;
                             bool ok = Roblox::unfriend(to_string(friendId), cookieCopy, &resp);
                             if (ok) {
-                                erase_if(g_friends, [&](const FriendInfo &fi) { return fi.id == friendId; });
-                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>(g_friends.size())
+                                erase_if(g_friends, [&](const FriendInfo &fi) {
+                                    return fi.id == friendId;
+                                });
+                                if (g_selectedFriendIdx >= 0 && g_selectedFriendIdx < static_cast<int>
+                                    (g_friends.size())
                                     &&
                                     g_friends[g_selectedFriendIdx].id == friendId) {
                                     g_selectedFriendIdx = -1;
@@ -270,9 +317,10 @@ void RenderFriendsTab() {
                                     return fi.id == friendId;
                                 });
                                 auto &unfList = g_unfriendedFriends[acctIdCopy];
-                                if (std::none_of(unfList.begin(), unfList.end(), [&](const FriendInfo &fi) {
-                                    return fi.id == friendId;
-                                }))
+                                if (std::none_of(unfList.begin(), unfList.end(),
+                                                 [&](const FriendInfo &fi) {
+                                                     return fi.id == friendId;
+                                                 }))
                                     unfList.push_back(fCopy);
                                 Data::SaveFriends();
                             } else {
@@ -301,7 +349,6 @@ void RenderFriendsTab() {
                 Unindent(indent);
             }
 
-
             if (clicked) {
                 g_selectedFriendIdx = static_cast<int>(i);
                 if (g_selectedFriend.id != f.id) {
@@ -317,15 +364,20 @@ void RenderFriendsTab() {
         }
 
         if (!g_unfriended.empty()) {
-            Separator();
-            PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-            TextUnformatted("Friends Lost:");
-            SameLine();
-            if (SmallButton("Clear")) {
-                g_unfriended.clear();
-                g_unfriendedFriends[currentAcctId].clear();
-                Data::SaveFriends();
+            PushID("FriendsLostSection");
+            SeparatorText("Friends Lost");
+
+            if (BeginPopupContextItem("FriendsLostContextMenu")) {
+                if (MenuItem("Clear")) {
+                    g_unfriended.clear();
+                    g_unfriendedFriends[currentAcctId].clear();
+                    Data::SaveFriends();
+                }
+                EndPopup();
             }
+            PopID();
+
+            PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
             for (const auto &uf: g_unfriended) {
                 string name = uf.displayName.empty() || uf.displayName == uf.username
                                   ? uf.username
@@ -492,7 +544,7 @@ void RenderFriendsTab() {
             }
             EndDisabled();
             SameLine();
-            bool openProfile = Button((string(ICON_OPEN_LINK) + " Open Profile").c_str());
+            bool openProfile = Button((string(ICON_OPEN_LINK) + " Open Page").c_str());
             if (openProfile)
                 OpenPopup("ProfileContext");
             OpenPopupOnItemClick("ProfileContext");
@@ -503,11 +555,14 @@ void RenderFriendsTab() {
                             "https://www.roblox.com/users/" + to_string(D.id) + "/profile",
                             "Roblox Profile", acct.cookie);
                 if (MenuItem("Friends"))
-                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/friends", "Friends", acct.cookie);
+                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/friends", "Friends",
+                                  acct.cookie);
                 if (MenuItem("Favorites"))
-                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/favorites", "Favorites", acct.cookie);
+                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/favorites", "Favorites",
+                                  acct.cookie);
                 if (MenuItem("Inventory"))
-                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/inventory/#!/accessories", "Inventory", acct.cookie);
+                    LaunchWebview("https://www.roblox.com/users/" + to_string(D.id) + "/inventory/#!/accessories",
+                                  "Inventory", acct.cookie);
                 if (MenuItem("Rolimons"))
                     LaunchWebview("https://www.rolimons.com/player/" + to_string(D.id), "Rolimons");
                 EndPopup();
