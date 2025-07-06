@@ -112,7 +112,7 @@ The executable will be generated at `build\altman\altman.exe` together with the 
 2. Go to **File ▸ Settings ▸ Build, Execution, Deployment ▸ CMake** and add  
    `-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%/scripts/buildsystems/vcpkg.cmake` to _CMake options_.
 3. Make sure the **Toolchain** is set to the _Visual Studio_ toolchain (x86_64).
-4. Press **Build** ▶️ and run the `altman` target.
+4. Press ▶️ to run the `altman` target.
 
 ---
 
