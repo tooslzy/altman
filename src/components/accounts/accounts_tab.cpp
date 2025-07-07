@@ -198,7 +198,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			else if (account.voiceStatus == "Disabled")
 				voiceCol = ImVec4(1.f, 1.f, 0.7f, 1.f); // Pastel yellow
 			else if (account.voiceStatus == "Banned")
-				voiceCol = ImVec4(1.f, 0.7f, 0.7f, 1.f); // Pastel red/pink
+				voiceCol = ImVec4(1.f, 0.7f, 0.7f, 1.f); // Pastel red
 
 			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0) {
 				time_t now = time(nullptr);
