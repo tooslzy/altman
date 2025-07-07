@@ -183,7 +183,7 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
                         TextColored(statusColor, "%s", account.status.c_str());
                         if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered()) {
                                 BeginTooltip();
-                                string timeStr = formatRelativeFuture(account.banExpiry);
+                                string timeStr = formatCountdown(account.banExpiry);
                                 TextUnformatted(timeStr.c_str());
                                 EndTooltip();
                         }
