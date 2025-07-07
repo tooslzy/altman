@@ -2,6 +2,7 @@
 #include <string>
 #include <chrono>
 #include <sstream>
+#include <iomanip>
 
 inline std::string formatRelativeFuture(time_t timestamp) {
 	using namespace std::chrono;
@@ -40,18 +41,50 @@ inline std::string formatRelativeFuture(time_t timestamp) {
 }
 
 inline std::string formatCountdown(time_t timestamp) {
-	using namespace std::chrono;
-	auto now = system_clock::now();
-	auto target = system_clock::from_time_t(timestamp);
-	long long diff = duration_cast<seconds>(target - now).count();
-	if (diff < 0)
-		diff = 0;
-	long long minutes = diff / 60;
-	long long seconds = diff % 60;
+    using namespace std::chrono;
 
-	char buf[32];
-	snprintf(buf, sizeof(buf), "%lld:%02lld", minutes, seconds);
-	return std::string(buf);
+    auto now = system_clock::now();
+    auto target = system_clock::from_time_t(timestamp);
+    long long diff = duration_cast<seconds>(target - now).count();
+
+    if (diff <= 0) return "now";
+
+    long long days = diff / 86400;
+    diff %= 86400;
+
+    long long hours = diff / 3600;
+    diff %= 3600;
+
+    long long minutes = diff / 60;
+    long long seconds = diff % 60;
+
+    std::ostringstream ss;
+
+    // if the difference is exactly n days w/ no remainder, return only "x day(s)"
+    if (days > 0 && hours == 0 && minutes == 0 && seconds == 0) {
+        ss << days << (days == 1 ? " day" : " days");
+        return ss.str();
+    }
+
+    if (days > 0) {
+        ss << days << (days == 1 ? " day " : " days ");
+    }
+
+    ss << std::setfill('0');
+
+    // if hours > 0, include the hours part else, skip it (regardless of days)
+    if (hours > 0) {
+        // hours w/o & minutes w/ leading zeros
+        ss << hours << ":" << std::setw(2) << minutes;
+    } else {
+        // minutes w/o leading zeros
+        ss << minutes;
+    }
+
+    // seconds always w/ leading zeros since minutes should always exist
+    ss << ":" << std::setw(2) << seconds;
+
+    return ss.str();
 }
 
 inline time_t parseIsoTimestamp(const std::string &isoRaw) {
