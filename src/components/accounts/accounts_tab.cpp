@@ -92,23 +92,23 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			char selectable_label[64];
 			snprintf(selectable_label, sizeof(selectable_label), "##row_selectable_%d", account.id);
 
-                        bool banned = account.status == "Banned";
-                        BeginDisabled(banned);
-                        if (Selectable(
-                                selectable_label,
-                                is_row_selected,
-                                ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
-                                ImVec2(0, row_interaction_height))) {
-                                if (GetIO().KeyCtrl) {
-                                        if (is_row_selected) g_selectedAccountIds.erase(account.id);
-                                        else g_selectedAccountIds.insert(account.id);
-                                } else {
-                                        bool was_already_solely_selected = (is_row_selected && g_selectedAccountIds.size() == 1);
-                                        g_selectedAccountIds.clear();
-                                        if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
-                                }
-                        }
-                        EndDisabled();
+			bool banned = account.status == "Banned";
+			BeginDisabled(banned);
+			if (Selectable(
+				selectable_label,
+				is_row_selected,
+				ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+				ImVec2(0, row_interaction_height))) {
+				if (GetIO().KeyCtrl) {
+					if (is_row_selected) g_selectedAccountIds.erase(account.id);
+					else g_selectedAccountIds.insert(account.id);
+				} else {
+					bool was_already_solely_selected = (is_row_selected && g_selectedAccountIds.size() == 1);
+					g_selectedAccountIds.clear();
+					if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
+				}
+			}
+			EndDisabled();
 
 			static std::unordered_map<int, double> holdStartTimes;
 			if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
@@ -176,29 +176,29 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			render_centered_text_in_cell(account.username.c_str());
 			render_centered_text_in_cell(account.userId.c_str());
 
-                        ImVec4 statusColor = getStatusColor(account.status);
-                        TableNextColumn();
-                        float status_y = GetCursorPosY();
-                        SetCursorPosY(status_y + vertical_padding);
-                        TextColored(statusColor, "%s", account.status.c_str());
-                        if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered()) {
-                                BeginTooltip();
-                                string timeStr = formatCountdown(account.banExpiry);
-                                TextUnformatted(timeStr.c_str());
-                                EndTooltip();
-                        }
-                        SetCursorPosY(status_y + row_interaction_height);
+			ImVec4 statusColor = getStatusColor(account.status);
+			TableNextColumn();
+			float status_y = GetCursorPosY();
+			SetCursorPosY(status_y + vertical_padding);
+			TextColored(statusColor, "%s", account.status.c_str());
+			if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered()) {
+				BeginTooltip();
+				string timeStr = formatCountdown(account.banExpiry);
+				TextUnformatted(timeStr.c_str());
+				EndTooltip();
+			}
+			SetCursorPosY(status_y + row_interaction_height);
 
 			TableNextColumn();
 			float voice_y = GetCursorPosY();
 			SetCursorPosY(voice_y + vertical_padding);
 			ImVec4 voiceCol = ImVec4(1.f, 1.f, 1.f, 1.f);
 			if (account.voiceStatus == "Enabled")
-				voiceCol = ImVec4(0.4f, 1.f, 0.4f, 1.f);
+				voiceCol = ImVec4(0.7f, 1.f, 0.7f, 1.f); // Pastel green
 			else if (account.voiceStatus == "Disabled")
-				voiceCol = ImVec4(1.f, 1.f, 0.3f, 1.f);
+				voiceCol = ImVec4(1.f, 1.f, 0.7f, 1.f); // Pastel yellow
 			else if (account.voiceStatus == "Banned")
-				voiceCol = ImVec4(1.f, 0.4f, 0.4f, 1.f);
+				voiceCol = ImVec4(1.f, 0.7f, 0.7f, 1.f); // Pastel red/pink
 
 			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0) {
 				time_t now = time(nullptr);
