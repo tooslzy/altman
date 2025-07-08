@@ -54,8 +54,11 @@ set(APP_SRC
         src/components/servers/servers_tab.cpp
         src/components/servers/servers_utils.cpp
         src/components/settings/settings_tab.cpp
+        src/components/avatar/inventory_tab.cpp
         src/components/backup.cpp
         src/utils/ui/webview.hpp
+        src/utils/core/stb_image.h
+        src/utils/ui/image.h
 )
 
 # Create executable

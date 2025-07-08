@@ -45,7 +45,8 @@ static bool s_openAddFriendPopup = false;
 static char s_addFriendBuffer[64] = "";
 static atomic<bool> s_addFriendLoading{false};
 
-static inline string trim_copy(string s) {
+static inline string trim_copy(string s)
+{
     size_t start = s.find_first_not_of(" \t\n\r");
     size_t end = s.find_last_not_of(" \t\n\r");
     if (start == string::npos)
@@ -53,7 +54,8 @@ static inline string trim_copy(string s) {
     return s.substr(start, end - start + 1);
 }
 
-static const char *presenceIcon(const string &p) {
+static const char *presenceIcon(const string &p)
+{
     if (p == "InStudio")
         return ICON_TOOL;
     if (p == "InGame")
@@ -63,30 +65,60 @@ static const char *presenceIcon(const string &p) {
     return "";
 }
 
-void RenderFriendsTab() {
-    if (g_selectedAccountIds.empty()) {
+void RenderFriendsTab()
+{
+    if (g_selectedAccountIds.empty())
+    {
         TextDisabled("Select an account in the Accounts tab to view its friends.");
         return;
     }
 
-    if (g_viewAcctId == -1 || std::none_of(g_accounts.begin(), g_accounts.end(),
-                                           [&](const AccountData &a) { return a.id == g_viewAcctId; })) {
-        g_viewAcctId = *g_selectedAccountIds.begin();
+    // Ensure the currently viewed account is valid and not banned.
+    auto isCurrentViewAccount = [&](const AccountData &a)
+    {
+        return a.id == g_viewAcctId && a.status != "Banned";
+    };
+
+    if (g_viewAcctId == -1 || std::none_of(g_accounts.begin(), g_accounts.end(), isCurrentViewAccount))
+    {
+        // Prefer a selected, non-banned account if one exists
+        g_viewAcctId = -1;
+        for (int id : g_selectedAccountIds)
+        {
+            auto itSel = std::find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a)
+                                      { return a.id == id && a.status != "Banned"; });
+            if (itSel != g_accounts.end())
+            {
+                g_viewAcctId = id;
+                break;
+            }
+        }
+        // Fallback to the first non-banned account in the list
+        if (g_viewAcctId == -1)
+        {
+            auto itFirst = std::find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a)
+                                        { return a.status != "Banned"; });
+            if (itFirst != g_accounts.end())
+                g_viewAcctId = itFirst->id;
+        }
     }
 
     int currentAcctId = g_viewAcctId;
     auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                      [&](auto &a) {
+                      [&](auto &a)
+                      {
                           return a.id == currentAcctId;
                       });
-    if (it == g_accounts.end()) {
+    if (it == g_accounts.end())
+    {
         TextDisabled("Selected account not found.");
         return;
     }
     const AccountData &acct = *it;
     g_unfriended = g_unfriendedFriends[currentAcctId];
 
-    if (currentAcctId != g_lastAcctIdForFriends) {
+    if (currentAcctId != g_lastAcctIdForFriends)
+    {
         g_friends.clear();
         g_selectedFriendIdx = -1;
         g_selectedFriend = {};
@@ -95,14 +127,19 @@ void RenderFriendsTab() {
         g_unfriended = g_unfriendedFriends[currentAcctId];
         g_lastAcctIdForFriends = currentAcctId;
 
-        if (!acct.userId.empty()) {
+        if (!acct.userId.empty())
+        {
             Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie,
                                  ref(g_friends),
                                  ref(g_friendsLoading));
         }
-    } {
+    }
+    {
         float maxLabelWidth = 0.0f;
-        for (const auto &acc: g_accounts) {
+        for (const auto &acc : g_accounts)
+        {
+            if (acc.status == "Banned")
+                continue; // Skip banned accounts in the dropdown
             const string &labelStr = acc.displayName.empty() ? acc.username : acc.displayName;
             float w = CalcTextSize(labelStr.c_str()).x;
             if (w > maxLabelWidth)
@@ -116,11 +153,16 @@ void RenderFriendsTab() {
 
         PushID("AccountSelectorCombo");
         const char *currentLabel = acct.displayName.empty() ? acct.username.c_str() : acct.displayName.c_str();
-        if (BeginCombo("##AccountSelector", currentLabel)) {
-            for (const auto &acc: g_accounts) {
+        if (BeginCombo("##AccountSelector", currentLabel))
+        {
+            for (const auto &acc : g_accounts)
+            {
+                if (acc.status == "Banned")
+                    continue; // Skip banned accounts in the dropdown
                 const char *label = acc.displayName.empty() ? acc.username.c_str() : acc.displayName.c_str();
                 bool isSelected = (acc.id == g_viewAcctId);
-                if (Selectable(label, isSelected)) {
+                if (Selectable(label, isSelected))
+                {
                     g_viewAcctId = acc.id;
                 }
                 if (isSelected)
@@ -134,40 +176,47 @@ void RenderFriendsTab() {
     SameLine();
 
     BeginDisabled(g_friendsLoading.load());
-    if (Button((string(ICON_REFRESH) + " Refresh").c_str()) && !acct.userId.empty()) {
+    if (Button((string(ICON_REFRESH) + " Refresh").c_str()) && !acct.userId.empty())
+    {
         g_selectedFriendIdx = -1;
         g_selectedFriend = {};
         Threading::newThread(FriendsActions::RefreshFullFriendsList, acct.id, acct.userId, acct.cookie, ref(g_friends),
                              ref(g_friendsLoading));
     }
     SameLine();
-    if (Button((string(ICON_USER_PLUS) + " Add Friend").c_str())) {
+    if (Button((string(ICON_USER_PLUS) + " Add Friend").c_str()))
+    {
         s_openAddFriendPopup = true;
     }
     EndDisabled();
 
-    if (s_openAddFriendPopup) {
+    if (s_openAddFriendPopup)
+    {
         OpenPopup("Add Friend");
         s_openAddFriendPopup = false;
     }
-    if (BeginPopupModal("Add Friend", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (BeginPopupModal("Add Friend", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
         float inputW = GetContentRegionAvail().x;
         if (inputW < 100.0f)
             inputW = 100.0f;
         PushItemWidth(inputW);
         InputTextWithHint("##AddFriendUser", "Username or ID", s_addFriendBuffer, sizeof(s_addFriendBuffer));
         PopItemWidth();
-        if (s_addFriendLoading.load()) {
+        if (s_addFriendLoading.load())
+        {
             SameLine();
             TextUnformatted("Sending...");
         }
         Spacing();
         float sendWidth = CalcTextSize("Send").x + GetStyle().FramePadding.x * 2.0f;
         float cancelWidth = CalcTextSize("Cancel").x + GetStyle().FramePadding.x * 2.0f;
-        if (Button("Send", ImVec2(sendWidth, 0)) && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load()) {
+        if (Button("Send", ImVec2(sendWidth, 0)) && s_addFriendBuffer[0] != '\0' && !s_addFriendLoading.load())
+        {
             string input = trim_copy(s_addFriendBuffer);
             s_addFriendLoading = true;
-            Threading::newThread([input, cookie = acct.cookie]() {
+            Threading::newThread([input, cookie = acct.cookie]()
+                                 {
                 try {
                     uint64_t uid = 0;
                     if (input.empty()) throw runtime_error("Username not provided");
@@ -189,13 +238,13 @@ void RenderFriendsTab() {
                     cerr << "Friend request exception: " << e.what() << "\n";
                     LOG_INFO(e.what());
                 }
-                s_addFriendLoading = false;
-            });
+                s_addFriendLoading = false; });
             s_addFriendBuffer[0] = '\0';
             CloseCurrentPopup();
         }
         SameLine(0, GetStyle().ItemSpacing.x);
-        if (Button("Cancel", ImVec2(cancelWidth, 0)) && !s_addFriendLoading.load()) {
+        if (Button("Cancel", ImVec2(cancelWidth, 0)) && !s_addFriendLoading.load())
+        {
             s_addFriendBuffer[0] = '\0';
             CloseCurrentPopup();
         }
@@ -205,10 +254,14 @@ void RenderFriendsTab() {
     float friendsListWidth = 300.0f;
 
     BeginChild("##FriendsList", ImVec2(friendsListWidth, 0), true);
-    if (g_friendsLoading.load() && g_friends.empty()) {
+    if (g_friendsLoading.load() && g_friends.empty())
+    {
         Text("Loading friends...");
-    } else {
-        for (size_t i = 0; i < g_friends.size(); ++i) {
+    }
+    else
+    {
+        for (size_t i = 0; i < g_friends.size(); ++i)
+        {
             const auto &f = g_friends[i];
             PushID(static_cast<int>(i));
 
@@ -228,46 +281,57 @@ void RenderFriendsTab() {
                                       ImGuiSelectableFlags_SpanAllColumns);
             PopStyleColor();
 
-            if (BeginPopupContextItem("FriendRowContextMenu")) {
-                if (MenuItem("Copy Display Name")) {
+            if (BeginPopupContextItem("FriendRowContextMenu"))
+            {
+                if (MenuItem("Copy Display Name"))
+                {
                     SetClipboardText(f.displayName.c_str());
                 }
-                if (MenuItem("Copy Username")) {
+                if (MenuItem("Copy Username"))
+                {
                     SetClipboardText(f.username.c_str());
                 }
-                if (MenuItem("Copy User ID")) {
+                if (MenuItem("Copy User ID"))
+                {
                     string idStr = to_string(f.id);
                     SetClipboardText(idStr.c_str());
                 }
                 bool inGame = f.presence == "InGame" && f.placeId && !f.gameId.empty();
-                if (inGame) {
+                if (inGame)
+                {
                     Separator();
-                    if (MenuItem("Join")) {
-                        vector<pair<int, string> > accounts;
-                        for (int id: g_selectedAccountIds) {
-                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
-                                return a.id == id;
-                            });
+                    if (MenuItem("Join"))
+                    {
+                        vector<pair<int, string>> accounts;
+                        for (int id : g_selectedAccountIds)
+                        {
+                            auto itA = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a)
+                                               { return a.id == id; });
                             if (itA != g_accounts.end() && itA->status != "Banned")
                                 accounts.emplace_back(itA->id, itA->cookie);
                         }
-                        if (!accounts.empty()) {
-                            Threading::newThread([row = f, accounts]() {
-                                launchRobloxSequential(row.placeId, row.gameId, accounts);
-                            });
+                        if (!accounts.empty())
+                        {
+                            Threading::newThread([row = f, accounts]()
+                                                 { launchRobloxSequential(row.placeId, row.gameId, accounts); });
                         }
                     }
-                    if (MenuItem("Fill Join Options")) {
+                    if (MenuItem("Fill Join Options"))
+                    {
                         FillJoinOptions(f.placeId, f.gameId);
                     }
-                    if (MenuItem("Copy Place ID")) {
+                    if (MenuItem("Copy Place ID"))
+                    {
                         SetClipboardText(to_string(f.placeId).c_str());
                     }
-                    if (MenuItem("Copy Job ID")) {
+                    if (MenuItem("Copy Job ID"))
+                    {
                         SetClipboardText(f.gameId.c_str());
                     }
-                    if (BeginMenu("Copy Launch Method")) {
-                        if (MenuItem("Browser Link")) {
+                    if (BeginMenu("Copy Launch Method"))
+                    {
+                        if (MenuItem("Browser Link"))
+                        {
                             string link = "https://www.roblox.com/games/start?placeId=" + to_string(f.placeId) +
                                           "&gameInstanceId=" + f.gameId;
                             SetClipboardText(link.c_str());
@@ -275,7 +339,7 @@ void RenderFriendsTab() {
 
                         char buf[256];
                         snprintf(buf, sizeof(buf), "roblox://placeId=%llu&gameInstanceId=%s",
-                                 (unsigned long long) f.placeId, f.gameId.c_str());
+                                 (unsigned long long)f.placeId, f.gameId.c_str());
                         if (MenuItem("Deep Link"))
                             SetClipboardText(buf);
                         string js = "Roblox.GameLauncher.joinGameInstance(" + to_string(f.placeId) + ", \"" + f.gameId +
@@ -291,15 +355,17 @@ void RenderFriendsTab() {
                 }
                 Separator();
                 PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-                if (MenuItem("Unfriend")) {
+                if (MenuItem("Unfriend"))
+                {
                     char buf[256];
                     snprintf(buf, sizeof(buf), "Unfriend %s?", f.username.c_str());
                     FriendInfo fCopy = f;
                     uint64_t friendId = fCopy.id;
                     string cookieCopy = acct.cookie;
                     int acctIdCopy = acct.id;
-                    ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]() {
-                        Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]() {
+                    ConfirmPopup::Add(buf, [fCopy, friendId, cookieCopy, acctIdCopy]()
+                                      { Threading::newThread([fCopy, friendId, cookieCopy, acctIdCopy]()
+                                                             {
                             string resp;
                             bool ok = Roblox::unfriend(to_string(friendId), cookieCopy, &resp);
                             if (ok) {
@@ -325,15 +391,14 @@ void RenderFriendsTab() {
                                 Data::SaveFriends();
                             } else {
                                 cerr << "Unfriend failed: " << resp << "\n";
-                            }
-                        });
-                    });
+                            } }); });
                 }
                 PopStyleColor();
                 EndPopup();
             }
 
-            if (f.presence == "InGame" && !f.lastLocation.empty()) {
+            if (f.presence == "InGame" && !f.lastLocation.empty())
+            {
                 const float indent = GetStyle().FramePadding.x * 4.0f;
                 Indent(indent);
                 ImVec4 gameCol = txtCol;
@@ -349,9 +414,11 @@ void RenderFriendsTab() {
                 Unindent(indent);
             }
 
-            if (clicked) {
+            if (clicked)
+            {
                 g_selectedFriendIdx = static_cast<int>(i);
-                if (g_selectedFriend.id != f.id) {
+                if (g_selectedFriend.id != f.id)
+                {
                     g_selectedFriend = {};
                     Threading::newThread(FriendsActions::FetchFriendDetails,
                                          to_string(f.id),
@@ -363,12 +430,15 @@ void RenderFriendsTab() {
             PopID();
         }
 
-        if (!g_unfriended.empty()) {
+        if (!g_unfriended.empty())
+        {
             PushID("FriendsLostSection");
             SeparatorText("Friends Lost");
 
-            if (BeginPopupContextItem("FriendsLostContextMenu")) {
-                if (MenuItem("Clear")) {
+            if (BeginPopupContextItem("FriendsLostContextMenu"))
+            {
+                if (MenuItem("Clear"))
+                {
                     g_unfriended.clear();
                     g_unfriendedFriends[currentAcctId].clear();
                     Data::SaveFriends();
@@ -378,7 +448,8 @@ void RenderFriendsTab() {
             PopID();
 
             PushStyleColor(ImGuiCol_Text, ImVec4(1.f, 0.4f, 0.4f, 1.f));
-            for (const auto &uf: g_unfriended) {
+            for (const auto &uf : g_unfriended)
+            {
                 string name = uf.displayName.empty() || uf.displayName == uf.username
                                   ? uf.username
                                   : uf.displayName + " (" + uf.username + ")";
@@ -397,38 +468,50 @@ void RenderFriendsTab() {
     BeginChild("##FriendDetails", ImVec2(0, 0), true);
     PopStyleVar();
 
-    if (g_selectedFriendIdx < 0 || g_selectedFriendIdx >= static_cast<int>(g_friends.size())) {
+    if (g_selectedFriendIdx < 0 || g_selectedFriendIdx >= static_cast<int>(g_friends.size()))
+    {
         Indent(desiredTextIndent);
         Spacing();
         TextWrapped("Click a friend to see more details or take action.");
         Unindent(desiredTextIndent);
-    } else if (g_friendDetailsLoading.load()) {
+    }
+    else if (g_friendDetailsLoading.load())
+    {
         Indent(desiredTextIndent);
         Spacing();
         Text("Loading full details...");
         Unindent(desiredTextIndent);
-    } else {
+    }
+    else
+    {
         const auto &D = g_selectedFriend;
-        if (D.id == 0 && g_friends[g_selectedFriendIdx].id != 0) {
+        if (D.id == 0 && g_friends[g_selectedFriendIdx].id != 0)
+        {
             Indent(desiredTextIndent);
             Spacing();
             Text("Fetching details for %s...", g_friends[g_selectedFriendIdx].username.c_str());
 
             Unindent(desiredTextIndent);
-        } else if (D.id == 0) {
+        }
+        else if (D.id == 0)
+        {
             Indent(desiredTextIndent);
             Spacing();
             TextWrapped("Details not available or selection issue.");
             Unindent(desiredTextIndent);
-        } else {
+        }
+        else
+        {
             ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
                                          ImGuiTableFlags_SizingFixedFit;
             PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, 4.0f));
-            if (BeginTable("FriendInfoTable", 2, tableFlags)) {
+            if (BeginTable("FriendInfoTable", 2, tableFlags))
+            {
                 TableSetupColumn("##friendlabel", ImGuiTableColumnFlags_WidthFixed, 120.f);
                 TableSetupColumn("##friendvalue", ImGuiTableColumnFlags_WidthStretch);
 
-                auto addFriendDataRow = [&](const char *label, const string &value, bool isWrapped = false) {
+                auto addFriendDataRow = [&](const char *label, const string &value, bool isWrapped = false)
+                {
                     TableNextRow();
                     TableSetColumnIndex(0);
                     Indent(desiredTextIndent);
@@ -441,13 +524,18 @@ void RenderFriendsTab() {
                     Indent(desiredTextIndent);
                     Spacing();
                     PushID(label);
-                    if (isWrapped) {
+                    if (isWrapped)
+                    {
                         TextWrapped("%s", value.c_str());
-                    } else {
+                    }
+                    else
+                    {
                         TextUnformatted(value.c_str());
                     }
-                    if (BeginPopupContextItem("CopyFriendValue")) {
-                        if (MenuItem("Copy")) {
+                    if (BeginPopupContextItem("CopyFriendValue"))
+                    {
+                        if (MenuItem("Copy"))
+                        {
                             SetClipboardText(value.c_str());
                         }
                         EndPopup();
@@ -457,7 +545,8 @@ void RenderFriendsTab() {
                     Unindent(desiredTextIndent);
                 };
 
-                auto addFriendDataRowInt = [&](const char *label, int value) {
+                auto addFriendDataRowInt = [&](const char *label, int value)
+                {
                     addFriendDataRow(label, to_string(value));
                 };
 
@@ -496,7 +585,8 @@ void RenderFriendsTab() {
                 float descChildHeight = availableHeightForDescAndBelow - reservedHeightBelowDescContent;
 
                 float minDescHeight = GetTextLineHeightWithSpacing() * 3.0f;
-                if (descChildHeight < minDescHeight) {
+                if (descChildHeight < minDescHeight)
+                {
                     descChildHeight = minDescHeight;
                 }
 
@@ -505,8 +595,10 @@ void RenderFriendsTab() {
                 BeginChild("##FriendDescScroll", ImVec2(0, descChildHeight - 4), false,
                            ImGuiWindowFlags_HorizontalScrollbar);
                 TextWrapped("%s", descStr.c_str());
-                if (BeginPopupContextItem("CopyFriendDesc")) {
-                    if (MenuItem("Copy")) {
+                if (BeginPopupContextItem("CopyFriendDesc"))
+                {
+                    if (MenuItem("Copy"))
+                    {
                         SetClipboardText(descStr.c_str());
                     }
                     EndPopup();
@@ -528,18 +620,21 @@ void RenderFriendsTab() {
 
             bool canJoin = (row.presence == "InGame" && row.placeId && !row.gameId.empty());
             BeginDisabled(!canJoin);
-            if (Button((string(ICON_JOIN) + " Join Game").c_str()) && canJoin) {
-                vector<pair<int, string> > accounts;
-                for (int id: g_selectedAccountIds) {
+            if (Button((string(ICON_JOIN) + " Join Game").c_str()) && canJoin)
+            {
+                vector<pair<int, string>> accounts;
+                for (int id : g_selectedAccountIds)
+                {
                     auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                                      [&](const AccountData &a) { return a.id == id; });
+                                      [&](const AccountData &a)
+                                      { return a.id == id; });
                     if (it != g_accounts.end() && it->status != "Banned")
                         accounts.emplace_back(it->id, it->cookie);
                 }
-                if (!accounts.empty()) {
-                    Threading::newThread([row, accounts]() {
-                        launchRobloxSequential(row.placeId, row.gameId, accounts);
-                    });
+                if (!accounts.empty())
+                {
+                    Threading::newThread([row, accounts]()
+                                         { launchRobloxSequential(row.placeId, row.gameId, accounts); });
                 }
             }
             EndDisabled();
@@ -548,7 +643,8 @@ void RenderFriendsTab() {
             if (openProfile)
                 OpenPopup("ProfileContext");
             OpenPopupOnItemClick("ProfileContext");
-            if (BeginPopup("ProfileContext")) {
+            if (BeginPopup("ProfileContext"))
+            {
                 if (MenuItem("Profile"))
                     if (D.id)
                         LaunchWebview(

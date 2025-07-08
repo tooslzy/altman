@@ -13,10 +13,12 @@
 #include "core/status.h"
 #include "ui/modal_popup.h"
 #include "ui/confirm.h"
+#include "avatar/inventory.h"
 
 using namespace ImGui;
 
-struct TabInfo {
+struct TabInfo
+{
     const char *title;
     Tab tab_id;
 
@@ -28,9 +30,10 @@ static const TabInfo tabs[] = {
     {"\xEF\x83\x80  Friends", Tab_Friends, RenderFriendsTab},
     {"\xEF\x84\x9B  Games", Tab_Games, RenderGamesTab},
     {"\xEF\x88\xB3  Servers", Tab_Servers, RenderServersTab},
+    {"\xEF\x8A\x90  Inventory", Tab_Inventory, RenderInventoryTab},
     {"\xEF\x85\x9C  History", Tab_History, RenderHistoryTab},
-    {"\xEF\x8A\xA8  Console", Tab_Console, Console::RenderConsoleTab},
-    {"\xEF\x80\x93  Settings", Tab_Settings, RenderSettingsTab}
+    {"\xEF\x80\x93  Settings", Tab_Settings, RenderSettingsTab},
+
 };
 
 char join_value_buf[JOIN_VALUE_BUF_SIZE] = "";
@@ -42,7 +45,8 @@ int g_activeTab = Tab_Accounts;
 uint64_t g_targetPlaceId_ServersTab = 0;
 uint64_t g_targetUniverseId_ServersTab = 0;
 
-bool RenderUI() {
+bool RenderUI()
+{
     bool exit_from_menu = RenderMainMenu();
     bool exit_from_content = false;
 
@@ -58,8 +62,10 @@ bool RenderUI() {
     style.FrameRounding = 2.5f;
     style.ChildRounding = 2.5f;
     PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(style.FramePadding.x + 2.0f, style.FramePadding.y + 2.0f));
-    if (BeginTabBar("MainTabBar", ImGuiTabBarFlags_Reorderable)) {
-        for (int i = 0; i < IM_ARRAYSIZE(tabs); ++i) {
+    if (BeginTabBar("MainTabBar", ImGuiTabBarFlags_Reorderable))
+    {
+        for (int i = 0; i < IM_ARRAYSIZE(tabs); ++i)
+        {
             const auto &tab_info = tabs[i];
             ImGuiTabItemFlags flags = (g_activeTab == tab_info.tab_id)
                                           ? ImGuiTabItemFlags_SetSelected
@@ -69,14 +75,16 @@ bool RenderUI() {
             if (IsItemClicked(ImGuiMouseButton_Left))
                 g_activeTab = tab_info.tab_id;
 
-            if (opened) {
+            if (opened)
+            {
                 tab_info.render_function();
                 EndTabItem();
             }
         }
         EndTabBar();
     }
-    PopStyleVar(); {
+    PopStyleVar();
+    {
         ImVec2 pos = ImVec2(vp->WorkPos.x + vp->WorkSize.x,
                             vp->WorkPos.y + vp->WorkSize.y);
         SetNextWindowPos(pos, ImGuiCond_Always, ImVec2(1, 1));
@@ -86,12 +94,15 @@ bool RenderUI() {
         PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
         PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
-        if (Begin("StatusBar", nullptr, flags)) {
+        if (Begin("StatusBar", nullptr, flags))
+        {
             string selectedNames;
             bool first = true;
-            for (int id: g_selectedAccountIds) {
+            for (int id : g_selectedAccountIds)
+            {
                 auto it = find_if(g_accounts.begin(), g_accounts.end(),
-                                  [&](const AccountData &a) { return a.id == id; });
+                                  [&](const AccountData &a)
+                                  { return a.id == id; });
                 if (it == g_accounts.end())
                     continue;
                 if (!first)

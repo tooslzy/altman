@@ -33,17 +33,20 @@ static int s_urlPopupAccountId = -1;
 static char s_urlBuffer[256] = "";
 static std::unordered_set<int> s_voiceUpdateInProgress;
 
-void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *table_id, float table_height) {
+void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *table_id, float table_height)
+{
 	constexpr int column_count = 6;
 	ImGuiTableFlags table_flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable |
-	                              ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable |
-	                              ImGuiTableFlags_ContextMenuInBody;
+								  ImGuiTableFlags_ScrollY | ImGuiTableFlags_Hideable | ImGuiTableFlags_Reorderable |
+								  ImGuiTableFlags_ContextMenuInBody;
 
-	if (g_selectedAccountIds.empty() && g_defaultAccountId != -1) {
+	if (g_selectedAccountIds.empty() && g_defaultAccountId != -1)
+	{
 		g_selectedAccountIds.insert(g_defaultAccountId);
 	}
 
-	if (BeginTable(table_id, column_count, table_flags, ImVec2(0.0f, table_height > 0 ? table_height - 2.0f : 0.0f))) {
+	if (BeginTable(table_id, column_count, table_flags, ImVec2(0.0f, table_height > 0 ? table_height - 2.0f : 0.0f)))
+	{
 		TableSetupColumn("Display Name", ImGuiTableColumnFlags_WidthStretch);
 		TableSetupColumn("Username", ImGuiTableColumnFlags_WidthStretch);
 		TableSetupColumn("UserID", ImGuiTableColumnFlags_WidthFixed, 100.0f);
@@ -66,13 +69,15 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 		TableNextColumn();
 		TextUnformatted("Note");
 
-		for (auto &account: accounts_to_display) {
+		for (auto &account : accounts_to_display)
+		{
 			TableNextRow();
 			PushID(account.id);
 
 			bool is_row_selected = g_selectedAccountIds.contains(account.id);
 
-			if (is_row_selected) {
+			if (is_row_selected)
+			{
 				TableSetBgColor(ImGuiTableBgTarget_RowBg0, GetColorU32(ImGuiCol_Header));
 			}
 
@@ -93,57 +98,76 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			snprintf(selectable_label, sizeof(selectable_label), "##row_selectable_%d", account.id);
 
 			bool banned = account.status == "Banned";
-			BeginDisabled(banned);
 			if (Selectable(
-				selectable_label,
-				is_row_selected,
-				ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
-				ImVec2(0, row_interaction_height))) {
-				if (GetIO().KeyCtrl) {
-					if (is_row_selected) g_selectedAccountIds.erase(account.id);
-					else g_selectedAccountIds.insert(account.id);
-				} else {
+					selectable_label,
+					is_row_selected,
+					ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+					ImVec2(0, row_interaction_height)))
+			{
+				if (GetIO().KeyCtrl)
+				{
+					if (is_row_selected)
+						g_selectedAccountIds.erase(account.id);
+					else
+						g_selectedAccountIds.insert(account.id);
+				}
+				else
+				{
 					bool was_already_solely_selected = (is_row_selected && g_selectedAccountIds.size() == 1);
 					g_selectedAccountIds.clear();
-					if (!was_already_solely_selected) g_selectedAccountIds.insert(account.id);
+					if (!was_already_solely_selected)
+						g_selectedAccountIds.insert(account.id);
 				}
 			}
-			EndDisabled();
 
 			static std::unordered_map<int, double> holdStartTimes;
-			if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left)) {
+			if (IsItemActivated() && IsMouseDown(ImGuiMouseButton_Left))
+			{
 				holdStartTimes[account.id] = GetTime();
 			}
 
 			bool holdTriggered = false;
-			if (IsItemActive()) {
+			if (IsItemActive())
+			{
 				auto it = holdStartTimes.find(account.id);
-				if (it != holdStartTimes.end() && (GetTime() - it->second) >= 0.65f) {
+				if (it != holdStartTimes.end() && (GetTime() - it->second) >= 0.65f)
+				{
 					holdStartTimes.erase(it);
 					holdTriggered = true;
 				}
-			} else {
+			}
+			else
+			{
 				holdStartTimes.erase(account.id);
 			}
 
-			if (IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-				if (!account.cookie.empty()) {
+			if (IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			{
+				if (!account.cookie.empty())
+				{
 					LOG_INFO(
 						"Opening browser for account: " + account.displayName + " (ID: " + std::to_string(account.id) +
 						")");
-					Threading::newThread([acc = account]() { LaunchBrowserWithCookie(acc); });
-				} else {
+					Threading::newThread([acc = account]()
+										 { LaunchBrowserWithCookie(acc); });
+				}
+				else
+				{
 					LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
 					Status::Error("Cookie is empty for this account");
 				}
 			}
 
-			if (holdTriggered) {
-				if (!account.cookie.empty()) {
+			if (holdTriggered)
+			{
+				if (!account.cookie.empty())
+				{
 					s_openUrlPopup = true;
 					s_urlPopupAccountId = account.id;
 					s_urlBuffer[0] = '\0';
-				} else {
+				}
+				else
+				{
 					LOG_WARN("Cannot open browser - cookie is empty for account: " + account.displayName);
 					Status::Error("Cookie is empty for this account");
 				}
@@ -160,7 +184,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 
 			SetCursorPosY(cell_content_start_y + row_interaction_height);
 
-			auto render_centered_text_in_cell = [&](const char *text, ImVec4 *color = nullptr) {
+			auto render_centered_text_in_cell = [&](const char *text, ImVec4 *color = nullptr)
+			{
 				TableNextColumn();
 				float current_cell_start_y = GetCursorPosY();
 
@@ -181,7 +206,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			float status_y = GetCursorPosY();
 			SetCursorPosY(status_y + vertical_padding);
 			TextColored(statusColor, "%s", account.status.c_str());
-			if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered()) {
+			if (account.status == "Banned" && account.banExpiry > 0 && IsItemHovered())
+			{
 				BeginTooltip();
 				string timeStr = formatCountdown(account.banExpiry);
 				TextUnformatted(timeStr.c_str());
@@ -200,15 +226,18 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 			else if (account.voiceStatus == "Banned")
 				voiceCol = ImVec4(1.f, 0.7f, 0.7f, 1.f); // Pastel red
 
-			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0) {
+			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0)
+			{
 				time_t now = time(nullptr);
 				if (now >= account.voiceBanExpiry &&
-				    !account.cookie.empty() &&
-				    s_voiceUpdateInProgress.count(account.id) == 0) {
+					!account.cookie.empty() &&
+					s_voiceUpdateInProgress.count(account.id) == 0)
+				{
 					s_voiceUpdateInProgress.insert(account.id);
 					int accId = account.id;
 					string cookie = account.cookie;
-					Threading::newThread([accId, cookie]() {
+					Threading::newThread([accId, cookie]()
+										 {
 						auto vs = Roblox::getVoiceChatStatus(cookie);
 						MainThread::Post([accId, vs]() {
 							auto it = find_if(g_accounts.begin(), g_accounts.end(),
@@ -219,13 +248,13 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 							}
 							s_voiceUpdateInProgress.erase(accId);
 							Data::SaveAccounts();
-						});
-					});
+						}); });
 				}
 			}
 
 			TextColored(voiceCol, "%s", account.voiceStatus.c_str());
-			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0 && IsItemHovered()) {
+			if (account.voiceStatus == "Banned" && account.voiceBanExpiry > 0 && IsItemHovered())
+			{
 				BeginTooltip();
 				string timeStr = formatCountdown(account.voiceBanExpiry);
 				TextUnformatted(timeStr.c_str());
@@ -240,11 +269,13 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 		EndTable();
 	}
 
-	if (s_openUrlPopup) {
+	if (s_openUrlPopup)
+	{
 		OpenPopup("Open URL");
 		s_openUrlPopup = false;
 	}
-	if (BeginPopupModal("Open URL", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (BeginPopupModal("Open URL", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
 		ImGuiStyle &style = GetStyle();
 		float openWidth = CalcTextSize("Open").x + style.FramePadding.x * 2.0f;
 		float cancelWidth = CalcTextSize("Cancel").x + style.FramePadding.x * 2.0f;
@@ -255,21 +286,22 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 		InputTextWithHint("##WebviewUrl", "Enter URL", s_urlBuffer, sizeof(s_urlBuffer));
 		PopItemWidth();
 		Spacing();
-		if (Button("Open", ImVec2(openWidth, 0)) && s_urlBuffer[0] != '\0') {
-			auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a) {
-				return a.id == s_urlPopupAccountId;
-			});
-			if (it != g_accounts.end()) {
+		if (Button("Open", ImVec2(openWidth, 0)) && s_urlBuffer[0] != '\0')
+		{
+			auto it = find_if(g_accounts.begin(), g_accounts.end(), [&](const AccountData &a)
+							  { return a.id == s_urlPopupAccountId; });
+			if (it != g_accounts.end())
+			{
 				string url = s_urlBuffer;
-				Threading::newThread([acc = *it, url]() {
-					LaunchWebview(url, acc.username + " - " + acc.userId, acc.cookie);
-				});
+				Threading::newThread([acc = *it, url]()
+									 { LaunchWebview(url, acc.username + " - " + acc.userId, acc.cookie); });
 			}
 			s_urlBuffer[0] = '\0';
 			CloseCurrentPopup();
 		}
 		SameLine(0, style.ItemSpacing.x);
-		if (Button("Cancel", ImVec2(cancelWidth, 0))) {
+		if (Button("Cancel", ImVec2(cancelWidth, 0)))
+		{
 			s_urlBuffer[0] = '\0';
 			CloseCurrentPopup();
 		}
@@ -277,7 +309,8 @@ void RenderAccountsTable(vector<AccountData> &accounts_to_display, const char *t
 	}
 }
 
-void RenderFullAccountsTabContent() {
+void RenderFullAccountsTabContent()
+{
 	float availH = GetContentRegionAvail().y;
 	ImGuiStyle &style = GetStyle();
 
@@ -285,10 +318,13 @@ void RenderFullAccountsTabContent() {
 
 	join_options_section_height += GetTextLineHeight() + style.ItemSpacing.y;
 	join_options_section_height += GetFrameHeight() + style.ItemSpacing.y;
-	if (join_type_combo_index == 1) {
+	if (join_type_combo_index == 1)
+	{
 		join_options_section_height += GetFrameHeight() + style.ItemSpacing.y;
 		join_options_section_height += GetFrameHeight() + style.ItemSpacing.y;
-	} else {
+	}
+	else
+	{
 		join_options_section_height += GetFrameHeight() + style.ItemSpacing.y;
 	}
 	join_options_section_height += 1.0f + style.ItemSpacing.y;

@@ -23,6 +23,7 @@ enum Tab
     Tab_History,
     Tab_Console,
     Tab_Settings,
+    Tab_Inventory,
     Tab_COUNT
 };
 
