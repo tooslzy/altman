@@ -44,17 +44,17 @@ namespace Roblox {
 		if (j.is_object() && j.contains("punishmentTypeDescription")) {
 			std::string punishmentType = j["punishmentTypeDescription"].get<std::string>();
 			time_t end = 0;
-			bool hasEndDate = j.contains("endDate") && j["endDate"].is_string() && !j["endDate"].get<std::string>().empty();
-			
+			bool hasEndDate = j.contains("endDate") && j["endDate"].is_string() && !j["endDate"].get<std::string>().
+			                  empty();
+
 			if (hasEndDate) {
 				end = parseIsoTimestamp(j["endDate"].get<std::string>());
 			}
-			
-			// Check if account is terminated (Delete punishment or no end date)
-			if (punishmentType == "Delete" || !hasEndDate) {
+
+			if (punishmentType == "Delete" && !hasEndDate) {
 				return {BanCheckResult::Terminated, 0};
 			}
-			
+
 			return {BanCheckResult::Banned, end};
 		}
 		if (j.empty())
